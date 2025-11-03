@@ -9,4 +9,9 @@ export default [
     to: { name: 'second-page' },
     icon: { icon: 'ri-file-text-line' },
   },
+  {
+    title: 'Three page alv',
+    to: { name: 'second-page' },
+    icon: { icon: 'ri-shadow-fill' },
+  },
 ]

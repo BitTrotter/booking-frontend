@@ -1,14 +1,16 @@
+import { p } from '@antfu/utils'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { createRouter, createWebHistory } from 'vue-router/auto'
+import { setupGuards } from './guards'
 
 function recursiveLayouts(route) {
   if (route.children) {
     for (let i = 0; i < route.children.length; i++)
       route.children[i] = recursiveLayouts(route.children[i])
-    
+
     return route
   }
-  
+
   return setupLayouts([route])[0]
 }
 
@@ -17,14 +19,35 @@ const router = createRouter({
   scrollBehavior(to) {
     if (to.hash)
       return { el: to.hash, behavior: 'smooth', top: 60 }
-    
+
     return { top: 0 }
   },
   extendRoutes: pages => [
-    ...[...pages].map(route => recursiveLayouts(route)),
+    ...[{
+    path: '/',
+    name: 'index',
+    redirect: to => {
+      // TODO: Get type from backend
+      const userData = useCookie('userData')
+      const userRole = userData.value?.role
+      if (userRole === 'admin')
+        return { name: 'dashboards-crm' }
+      if (userRole === 'client')
+        return { name: 'access-control' }
+      
+      return { name: 'login', query: to.query }
+    },
+  }],
+    ...[...pages, ...[
+      {
+        path: '/second-page',
+        name: 'second-page',
+        component: () => import('@/pages/second-page.vue'),
+      }
+    ]].map(route => recursiveLayouts(route)),
   ],
 })
-
+setupGuards(router)
 export { router }
 export default function (app) {
   app.use(router)
