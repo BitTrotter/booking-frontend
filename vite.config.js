@@ -11,8 +11,19 @@ import Layouts from 'vite-plugin-vue-layouts'
 import vuetify from 'vite-plugin-vuetify'
 import svgLoader from 'vite-svg-loader'
 
+
 // https://vitejs.dev/config/
 export default defineConfig({
+
+  server: {
+    watch: {
+      // Forzar que Vite observe cambios en estas carpetas
+      paths: [fileURLToPath(new URL('./src/@layouts/components', import.meta.url))], usePolling: true, // opcional, más agresivo pero 100% fiable
+      interval: 100
+    },
+  },
+
+
   plugins: [
     // Docs: https://github.com/posva/unplugin-vue-router
     // ℹ️ This plugin should be placed before vue plugin

@@ -9,12 +9,12 @@ export const redirects = [
     name: 'index',
     redirect: to => {
       // TODO: Get type from backend
-      const userData = useCookie('userData')
-      const userRole = userData.value?.role
-      if (userRole === 'admin')
-        return { name: 'dashboards-crm' }
-      if (userRole === 'client')
-        return { name: 'access-control' }
+      // const userData = useCookie('userData')
+      // const userRole = userData.value?.role
+      // if (userRole === 'admin')
+      //   return { name: 'dashboards-crm' }
+      // if (userRole === 'client')
+      //   return { name: 'access-control' }
       
       return { name: 'login', query: to.query }
     },

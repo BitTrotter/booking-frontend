@@ -1,6 +1,7 @@
 <script setup>
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import avatar1 from '@images/avatars/avatar-1.png'
+const router = useRouter()
 
 const userProfileList = [
   { type: 'divider' },
@@ -41,6 +42,13 @@ const userProfileList = [
     href: '#',
   },
 ]
+const  logout = async () => {
+  localStorage.removeItem('userData')
+  localStorage.removeItem('accessToken')
+  await router.push('/login')
+}
+const user = localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData')) : null
+console.log('user profile', user)
 </script>
 
 <template>
@@ -67,7 +75,7 @@ const userProfileList = [
         offset="15px"
       >
         <VList>
-          <VListItem class="px-4">
+          <VListItem class="px-4" v-if="user">
             <div class="d-flex gap-x-2 align-center">
               <VAvatar>
                 <VImg :src="avatar1" />
@@ -75,10 +83,10 @@ const userProfileList = [
 
               <div>
                 <div class="text-body-2 font-weight-medium text-high-emphasis">
-                  John Doe
+                  {{ user ? user.name : 'Guest' }}
                 </div>
                 <div class="text-capitalize text-caption text-disabled">
-                  Admin
+                  {{ user ? user.role.name : 'Guest' }}
                 </div>
               </div>
             </div>
@@ -126,7 +134,7 @@ const userProfileList = [
                 color="error"
                 size="small"
                 append-icon="ri-logout-box-r-line"
-                :to="{ name: 'login' }"
+                @click=logout()
               >
                 Logout
               </VBtn>
