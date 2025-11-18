@@ -1,193 +1,147 @@
 export const COOKIE_MAX_AGE_1_YEAR = 365 * 24 * 60 * 60
 
 export const PERMISOS = [
-    {
-      name: 'Dashboard',
-      permisos: [{
-        name: 'Graficos',
-        permiso: 'show_report_grafics',
-      }],
-    },
-    {
-      name: 'Roles y Permisos',
-      permisos: [
-        {
-            name: 'Registrar',
-            permiso: 'register_rol'
-        },
-        {
-            name: 'Listado',
-            permiso: 'list_rol'
-        },
-        {
-            name: 'Edición',
-            permiso: 'edit_rol'
-        },
-        {
-            name: 'Eliminar',
-            permiso: 'delete_rol'
-        }
-      ]
-    },
-    {
-      name: 'Staffs',
-      permisos: [
-        {
-            name: 'Registrar',
-            permiso: 'register_staff'
-        },
-        {
-            name: 'Listado',
-            permiso: 'list_staff'
-        },
-        {
-            name: 'Edición',
-            permiso: 'edit_staff'
-        },
-        {
-            name: 'Eliminar',
-            permiso: 'delete_staff'
-        }
-      ]
-    },
-    {
-      name: 'Veterinario',
-      permisos: [
-        {
-            name: 'Registrar',
-            permiso: 'register_veterinary'
-        },
-        {
-            name: 'Listado',
-            permiso: 'list_veterinary'
-        },
-        {
-            name: 'Edición',
-            permiso: 'edit_veterinary'
-        },
-        {
-            name: 'Eliminar',
-            permiso: 'delete_veterinary'
-        },
-        {
-            name: 'Perfil',
-            permiso: 'profile_veterinary'
-        }
-      ]
-    },
-    {
-      name: 'Mascotitas',
-      permisos: [
-        {
-            name: 'Registrar',
-            permiso: 'register_pet'
-        },
-        {
-            name: 'Listado',
-            permiso: 'list_pet'
-        },
-        {
-            name: 'Edición',
-            permiso: 'edit_pet'
-        },
-        {
-            name: 'Eliminar',
-            permiso: 'delete_pet'
-        },
-        {
-            name: 'Perfil',
-            permiso: 'profile_pet'
-        }
-      ]
-    },
-    {
-      name: 'Citas Medicas',
-      permisos: [
-        {
-            name: 'Registrar',
-            permiso: 'register_appointment'
-        },
-        {
-            name: 'Listado',
-            permiso: 'list_appointment'
-        },
-        {
-            name: 'Edición',
-            permiso: 'edit_appointment'
-        },
-        {
-            name: 'Eliminar',
-            permiso: 'delete_appointment'
-        },
-      ]
-    },
-    {
-      name: 'Calendario',
-      permisos: [{
-        name: 'Disponibilidad',
-        permiso: 'calendar',
-      }],
-    },
-    {
-      name: 'Pagos',
-      permisos: [
-        {
-            name: 'Ver',
-            permiso: 'show_payment'
-        },
-        {
-            name: 'Gestión',
-            permiso: 'edit_payment'
-        },
-      ]
-    },
-    {
-      name: 'Vacunas',
-      permisos: [
-        {
-            name: 'Registrar',
-            permiso: 'register_vaccionation'
-        },
-        {
-            name: 'Listado',
-            permiso: 'list_vaccionation'
-        },
-        {
-            name: 'Edición',
-            permiso: 'edit_vaccionation'
-        },
-        {
-            name: 'Eliminar',
-            permiso: 'delete_vaccionation'
-        },
-      ]
-    },
-    {
-      name: 'Procedimientos quirúrgicos',
-      permisos: [
-        {
-            name: 'Registrar',
-            permiso: 'register_surgeries'
-        },
-        {
-            name: 'Listado',
-            permiso: 'list_surgeries'
-        },
-        {
-            name: 'Edición',
-            permiso: 'edit_surgeries'
-        },
-        {
-            name: 'Eliminar',
-            permiso: 'delete_surgeries'
-        },
-      ]
-    },
-    {
-      name: 'Historial Medico',
-      permisos: [{
-        name: 'Disponibilidad',
-        permiso: 'show_medical_records',
-      }],
-    },
-  ]
+  {
+    name: 'Dashboard',
+    permisos: [
+      {
+        name: 'Charts & Reports',
+        permiso: 'show_dashboard_reports',
+      }
+    ],
+  },
+  {
+    name: 'Roles & Permissions',
+    permisos: [
+      {
+        name: 'Create',
+        permiso: 'create_role'
+      },
+      {
+        name: 'List',
+        permiso: 'list_role'
+      },
+      {
+        name: 'Edit',
+        permiso: 'edit_role'
+      },
+      {
+        name: 'Delete',
+        permiso: 'delete_role'
+      }
+    ]
+  },
+  {
+    name: 'Users / Staff',
+    permisos: [
+      {
+        name: 'Create',
+        permiso: 'create_staff'
+      },
+      {
+        name: 'List',
+        permiso: 'list_staff'
+      },
+      {
+        name: 'Edit',
+        permiso: 'edit_staff'
+      },
+      {
+        name: 'Delete',
+        permiso: 'delete_staff'
+      }
+    ]
+  },
+  {
+    name: 'Cabins',
+    permisos: [
+      {
+        name: 'Create',
+        permiso: 'create_cabin'
+      },
+      {
+        name: 'List',
+        permiso: 'list_cabin'
+      },
+      {
+        name: 'Edit',
+        permiso: 'edit_cabin'
+      },
+      {
+        name: 'Delete',
+        permiso: 'delete_cabin'
+      },
+      {
+        name: 'Details',
+        permiso: 'show_cabin_details'
+      }
+    ]
+  },
+  {
+    name: 'Reservations',
+    permisos: [
+      {
+        name: 'Create',
+        permiso: 'create_reservation'
+      },
+      {
+        name: 'List',
+        permiso: 'list_reservation'
+      },
+      {
+        name: 'Edit',
+        permiso: 'edit_reservation'
+      },
+      {
+        name: 'Cancel',
+        permiso: 'cancel_reservation'
+      },
+      {
+        name: 'View Details',
+        permiso: 'show_reservation_details'
+      }
+    ]
+  },
+  {
+    name: 'Guests',
+    permisos: [
+      {
+        name: 'Create',
+        permiso: 'create_guest'
+      },
+      {
+        name: 'List',
+        permiso: 'list_guest'
+      },
+      {
+        name: 'Edit',
+        permiso: 'edit_guest'
+      },
+      {
+        name: 'Delete',
+        permiso: 'delete_guest'
+      },
+      {
+        name: 'Profile',
+        permiso: 'show_guest_profile'
+      }
+    ]
+  },
+  {
+    name: 'Payments',
+    permisos: [
+      {
+        name: 'List',
+        permiso: 'list_payment'
+      },
+      {
+        name: 'Refund',
+        permiso: 'refund_payment'
+      },
+      {
+        name: 'Details',
+        permiso: 'show_payment_details'
+      }
+    ]
+  }
+];
