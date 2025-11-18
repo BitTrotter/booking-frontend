@@ -29,7 +29,10 @@ definePage({
 })
 
 
-
+const setf = () => {
+form.value.email = 'ultraroot@gmail.com'
+form.value.password = '12345678'
+}
 
 const login = async () => {
   try {
@@ -111,14 +114,15 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
             <VRow>
               <!-- email -->
               <VCol cols="12">
-                <VTextField v-model="form.email" autofocus label="Email" type="email" placeholder="johndoe@email.com" />
+                <VTextField v-model="form.email" autofocus label="Email" type="email" placeholder="johndoe@email.com"  />
               </VCol>
 
 
               <!-- password -->
               <VCol cols="12">
+                <!-- <VTextField v-model="form.password" label="Password" placeholder="············" -->
                 <VTextField v-model="form.password" label="Password" placeholder="············"
-                  :type="isPasswordVisible ? 'text' : 'password'"
+                :type="isPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isPasswordVisible ? 'ri-eye-off-line' : 'ri-eye-line'"
                   @click:append-inner="isPasswordVisible = !isPasswordVisible" />
                 <VAlert class="mt-2" title="Alert" type="error" closable v-if="error_login">
@@ -136,6 +140,9 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
                 </div>
 
                 <!-- login button -->
+                <VBtn block  @click="setf()">
+                  set
+                </VBtn>
                 <VBtn block type="submit">
                   Login
                 </VBtn>
