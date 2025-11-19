@@ -26,7 +26,6 @@
     "@tiptap/pm": "2.3.0",
     "@tiptap/starter-kit": "2.3.0",
     "@tiptap/vue-3": "2.3.0",
-    "@vue/babel-plugin-jsx": "^1.2.2",
     "@vueuse/core": "10.9.0",
     "@vueuse/math": "10.9.0",
     "apexcharts": "3.49.0",
