@@ -16,7 +16,7 @@ const permissions = ref([])
 const warningEmptyRole = ref(false)
 const role_name = ref('')
 const emit = defineEmits(['update:isDialogVisible'])
-const warnError = ref(null)
+let warnError = ref("")
 const succses = ref(false)
 const addPermissions = (permiso) => {
     !permissions.value.includes(permiso) ? permissions.value.push(permiso) : permissions.value = permissions.value.filter(item => item !== permiso)
