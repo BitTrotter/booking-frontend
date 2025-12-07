@@ -23,19 +23,8 @@ export default [
   },
   {
     title: 'Booking',
+    to: { name: 'booking' },
     icon: { icon: 'ri-calendar-line' },
-    children: [
-      {
-        title: 'Registrar',
-        to: 'second-page',
-        icon: { icon: 'ri-radio-button-line' },
-      },
-      {
-        title: 'Listado',
-        to: 'second-page',
-        icon: { icon: 'ri-radio-button-line' },
-      },
-    ],
   },
     {
     title: 'Calendar',

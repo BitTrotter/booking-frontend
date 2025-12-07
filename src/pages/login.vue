@@ -140,7 +140,7 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
                 </div>
 
                 <!-- login button -->
-                <VBtn block  @click="setf()">
+                <VBtn block  @click="setf()" class="mb-4">
                   set
                 </VBtn>
                 <VBtn block type="submit">

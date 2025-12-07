@@ -13,6 +13,7 @@ declare module 'vue' {
     AddEditPermissionDialog: typeof import('./src/components/dialogs/AddEditPermissionDialog.vue')['default']
     AddEditRoleDialog: typeof import('./src/components/dialogs/AddEditRoleDialog.vue')['default']
     AddPaymentMethodDialog: typeof import('./src/components/dialogs/AddPaymentMethodDialog.vue')['default']
+    AddReservation: typeof import('./src/components/booking/AddReservation.vue')['default']
     AddRolaDialog: typeof import('./src/components/booking/role/AddRolaDialog.vue')['default']
     AddUsers: typeof import('./src/components/booking/role/AddUsers.vue')['default']
     AppBarSearch: typeof import('./src/@core/components/AppBarSearch.vue')['default']
