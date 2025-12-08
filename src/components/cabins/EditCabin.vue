@@ -23,13 +23,15 @@ const serviceList = [
     'Hot Tub',
     'BBQ Grill'
 ]
+
+
 const props = defineProps({
     isDialogEditVisible: {
         type: Boolean,
         required: true,
     },
     cabin: {
-        type: String,
+        type: Object,
         required: false,
     },
 
@@ -39,7 +41,7 @@ const dialogVisibleUpdate = val => {
 }
 
 const submitCabin = async () => {
-    const payload = {
+   const payload = {
         name: name.value,
         description: description.value,
         price_per_night: price_per_night.value,
@@ -50,8 +52,8 @@ const submitCabin = async () => {
         status: status.value,
     }
     try {
-        const resp = await $api('/cabins', {
-            method: 'POST',
+        const resp = await $api(`/cabins/${props.cabin.id}`, {
+            method: 'PUT',
             body: payload,
             onResponseError: ({ response }) => {
                 console.error('Error saving cabin:', response.statusText)
@@ -65,6 +67,38 @@ const submitCabin = async () => {
     }
 }
 
+const loadCabinDetails = async () => {
+const dataCabint  = await $api(`/cabins/${props.cabin.id}`, {
+            method: 'GET',
+            onResponseError: ({ response }) => {
+                console.error('Error saving cabin:', response.statusText)
+                throw new Error(response.statusText || 'Error saving cabin')
+            }
+           
+        })
+        name.value = dataCabint.name
+        description.value = dataCabint.description
+        price_per_night.value = dataCabint.price_per_night
+        capacity.value = dataCabint.capacity
+        beds.value = dataCabint.beds
+        bathrooms.value = dataCabint.bathrooms
+        services.value = dataCabint.services
+        status.value = dataCabint.status
+
+     console.log('Cabin details:', dataCabint )
+    }
+
+onMounted(() => {
+    console.log('EditCabin mounted')
+ 
+        watch(() => props.isDialogEditVisible, (val) => {
+    if (val) {
+        loadCabinDetails()
+    }
+})
+    
+})
+
 </script>
 
 <template>
@@ -74,6 +108,7 @@ const submitCabin = async () => {
                 <VTab value="info-general">General Information</VTab>
                 <VTab value="detalles">Details</VTab>
                 <VTab value="extras">Extras</VTab>
+                <VTab value="images">Images</VTab>
             </VTabs>
 
             <VCardText>
@@ -90,8 +125,9 @@ const submitCabin = async () => {
                                         label="Status" placeholder="Select status" />
                                 </VCol>
                                 <VCol cols="12">
-                                
-                                    <TiptapEditor v-model="description" class="border rounded" label="Description"  placeholder="Brief description of the cabin..." />
+
+                                    <TiptapEditor v-model="description" class="border rounded" label="Description"
+                                        placeholder="Brief description of the cabin..." />
                                 </VCol>
                             </VRow>
                         </VForm>
@@ -130,6 +166,9 @@ const submitCabin = async () => {
                                 </VCol>
                             </VRow>
                         </VForm>
+                    </VWindowItem>
+                    <VWindowItem value="images">
+                        <VFileInput multiple label="File input" density="compact"/>1
                     </VWindowItem>
                 </VWindow>
             </VCardText>

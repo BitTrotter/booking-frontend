@@ -1,7 +1,11 @@
 <template>
     <div>
         <VCard title="Cabins">
+            <VCol md="6" lg="8" cols="12">
+                <VCard>
 
+                </VCard>
+            </VCol>
 
             <VCardText class="d-flex flex-wrap gap-4">
                 <div class="d-flex align-center">
@@ -14,9 +18,7 @@
 
                 <div class="d-flex gap-x-4 align-center">
                     <!-- 👉 Export button -->
-                    <VBtn variant="outlined" color="secondary" prepend-icon="ri-upload-2-line">
-
-                    </VBtn>
+                    <VBtn icon="ri-search-line" variant="text" color="success" @click="list" />
 
                     <VBtn color="primary" prepend-icon="ri-add-line"
                         @click="isAddRoleDialogVisible = !isAddRoleDialogVisible">
@@ -63,6 +65,7 @@
 
 
 <script setup>
+import pages2 from '@images/pages/2.png'
 // import data from '@/views/js/datatable'
 import AddCabin from '@/components/cabins/AddCabin.vue';
 import { onMounted } from 'vue';
@@ -83,9 +86,8 @@ const searchQuery = ref('')
 const isAddRoleDialogVisible = ref(false)
 const isEditRoleDialogVisible = ref(false)
 const snackBar = ref(true)
-console.log(PERMISOS);
 const data = ref([])
-let selectedCabin = ref(null)
+let selectedCabin = ref([])
 const list = async () => {
     const resp = await $api('/cabins?search=' + (searchQuery.value ? searchQuery.value : ''), {
         method: 'GET',
@@ -95,18 +97,22 @@ const list = async () => {
         }
     })
     data.value = resp;
-    console.log(data);
 }
 
-
+watch(() => isEditRoleDialogVisible, (val) => {
+    if (!val) {
+        list()
+    }
+})
 const editItem = (item) => {
-    console.log('Edit item', item);
+    // console.log('Edit item', item);
 }
 const deleteItem = (item) => {
-    console.log('Delete item', item);
+    // console.log('Delete item', item);
 }
 
 const openEdit = (item) => {
+    // console.log('Open edit for item', item);
     selectedCabin.value = item
     isEditRoleDialogVisible.value = true
 }
