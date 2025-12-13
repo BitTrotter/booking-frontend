@@ -38,6 +38,7 @@ const props = defineProps({
 })
 const dialogVisibleUpdate = val => {
     emit('update:isDialogEditVisible', val)
+    
 }
 
 const submitCabin = async () => {
@@ -51,6 +52,7 @@ const submitCabin = async () => {
         services: services.value,
         status: status.value,
     }
+    console.log('Submitting cabin:', payload)
     try {
         const resp = await $api(`/cabins/${props.cabin.id}`, {
             method: 'PUT',
@@ -126,7 +128,7 @@ onMounted(() => {
                                 </VCol>
                                 <VCol cols="12">
 
-                                    <TiptapEditor v-model="description" class="border rounded" label="Description"
+                                    <VTextField v-model="description" class="border rounded" label="Description"
                                         placeholder="Brief description of the cabin..." />
                                 </VCol>
                             </VRow>
