@@ -11,6 +11,13 @@ const beds = ref(null)
 const bathrooms = ref(null)
 const services = ref([])
 const status = ref('available')
+const typeRule = ref(null)
+const typeRulePrice = ref(null)
+const starDate = ref(null)
+const endDate = ref(null)
+const minNights = ref(null)
+const ruleStatus = ref(true)
+
 const serviceList = [
     'WiFi',
     'Air Conditioning',
@@ -38,11 +45,42 @@ const props = defineProps({
 })
 const dialogVisibleUpdate = val => {
     emit('update:isDialogEditVisible', val)
+
+}
+
+const submitRulePrice = async () => {
+    // Lógica para guardar la regla de precio
+  const priceRulesPayload = 
+        // Example price rule
+        {
+            type: typeRule.value,
+            price_per_night: typeRulePrice.value,
+            start_date: starDate.value,
+            end_date: endDate.value,
+            min_nights: minNights.value,
+            status: ruleStatus.value,
+        }
     
+
+      try {
+        const resp = await $api(`/cabins/${props.cabin.id}/price-rules`, {
+            method: 'POST',
+            body: priceRulesPayload,
+            onResponseError: ({ response }) => {
+                console.error('Error saving cabin:', response.statusText)
+                throw new Error(response.statusText || 'Error saving cabin')
+            }
+        })
+        console.log('Cabin saved successfully:', resp)
+        dialogVisibleUpdate(false)
+    } catch (error) {
+        console.error('Error submitting cabin:', error)
+    }
+
 }
 
 const submitCabin = async () => {
-   const payload = {
+    const payload = {
         name: name.value,
         description: description.value,
         price_per_night: price_per_night.value,
@@ -52,6 +90,7 @@ const submitCabin = async () => {
         services: services.value,
         status: status.value,
     }
+  
     console.log('Submitting cabin:', payload)
     try {
         const resp = await $api(`/cabins/${props.cabin.id}`, {
@@ -70,35 +109,38 @@ const submitCabin = async () => {
 }
 
 const loadCabinDetails = async () => {
-const dataCabint  = await $api(`/cabins/${props.cabin.id}`, {
-            method: 'GET',
-            onResponseError: ({ response }) => {
-                console.error('Error saving cabin:', response.statusText)
-                throw new Error(response.statusText || 'Error saving cabin')
-            }
-           
-        })
-        name.value = dataCabint.name
-        description.value = dataCabint.description
-        price_per_night.value = dataCabint.price_per_night
-        capacity.value = dataCabint.capacity
-        beds.value = dataCabint.beds
-        bathrooms.value = dataCabint.bathrooms
-        services.value = dataCabint.services
-        status.value = dataCabint.status
+    const dataCabint = await $api(`/cabins/${props.cabin.id}`, {
+        method: 'GET',
+        onResponseError: ({ response }) => {
+            console.error('Error saving cabin:', response.statusText)
+            throw new Error(response.statusText || 'Error saving cabin')
+        }
 
-     console.log('Cabin details:', dataCabint )
-    }
+    })
+    name.value = dataCabint.name
+    description.value = dataCabint.description
+    price_per_night.value = dataCabint.price_per_night
+    capacity.value = dataCabint.capacity
+    beds.value = dataCabint.beds
+    bathrooms.value = dataCabint.bathrooms
+    services.value = dataCabint.services
+    status.value = dataCabint.status
+
+
+
+
+    console.log('Cabin details:', dataCabint)
+}
 
 onMounted(() => {
     console.log('EditCabin mounted')
- 
-        watch(() => props.isDialogEditVisible, (val) => {
-    if (val) {
-        loadCabinDetails()
-    }
-})
-    
+
+    watch(() => props.isDialogEditVisible, (val) => {
+        if (val) {
+            loadCabinDetails()
+        }
+    })
+
 })
 
 </script>
@@ -108,6 +150,7 @@ onMounted(() => {
         <VCard flat class="pa-4">
             <VTabs v-model="tab">
                 <VTab value="info-general">General Information</VTab>
+                <VTab value="price">price</VTab>
                 <VTab value="detalles">Details</VTab>
                 <VTab value="extras">Extras</VTab>
                 <VTab value="images">Images</VTab>
@@ -134,15 +177,72 @@ onMounted(() => {
                             </VRow>
                         </VForm>
                     </VWindowItem>
+                    <VWindowItem value="price">
+
+                        <VRow>
+                            <!-- Precio base -->
+                            <VCol cols="12" md="6">
+                                <VTextField label="Base price per night" v-model="price_per_night" type="number" prefix="$" min="0" />
+                            </VCol>
+
+                            <!-- Tipo de regla -->
+                            <VCol cols="12" md="6">
+                                <VSelect label="Price rule type" v-model="typeRule" :items="[
+                                    { title: 'Weekend', value: 'weekend' },
+                                    { title: 'Date range', value: 'date_range' },
+                                    { title: 'Minimum nights', value: 'min_nights' }
+                                ]" />
+                            </VCol>
+
+                            <!-- Precio de la regla -->
+                            <VCol cols="12" md="6">
+                                <VTextField label="Rule price per night" v-model="typeRulePrice" type="number" prefix="$" min="0" />
+                            </VCol>
+
+                            <!-- Días (fin de semana) -->
+                            <VCol cols="12" md="6">
+                                <VSelect label="Applicable days" multiple :items="[
+                                    'Monday',
+                                    'Tuesday',
+                                    'Wednesday',
+                                    'Thursday',
+                                    'Friday',
+                                    'Saturday',
+                                    'Sunday'
+                                ]" />
+                            </VCol>
+
+                            <!-- Rango de fechas -->
+                            <VCol cols="12" md="6">
+                                <VTextField label="Start date" v-model="starDate" type="date" />
+                            </VCol>
+
+                            <VCol cols="12" md="6">
+                                <VTextField label="End date" v-model="endDate" type="date" />
+                            </VCol>
+
+                            <!-- Mínimo de noches -->
+                            <VCol cols="12" md="6">
+                                <VTextField label="Minimum nights" v-model="minNights" type="number" min="1" />
+                            </VCol>
+
+                            <!-- Estado -->
+                            <VCol cols="12" md="6">
+                                <VSelect label="Rule status" v-model="ruleStatus" :items="[
+                                    { title: 'Active', value: true },
+                                    { title: 'Inactive', value: false }
+                                ]" />
+                            </VCol>
+                        </VRow>
+                                        <VBtn @click="submitRulePrice">Save</VBtn>
+
+                    </VWindowItem>
 
                     <!-- TAB 2: Details -->
                     <VWindowItem value="detalles">
                         <VForm class="mt-2">
                             <VRow>
-                                <VCol cols="12" md="6">
-                                    <VTextField v-model="price_per_night" type="number" label="Price per Night"
-                                        placeholder="1500" />
-                                </VCol>
+                               
                                 <VCol cols="12" md="6">
                                     <VTextField v-model="capacity" type="number" label="Guest Capacity"
                                         placeholder="4" />
@@ -170,7 +270,7 @@ onMounted(() => {
                         </VForm>
                     </VWindowItem>
                     <VWindowItem value="images">
-                        <VFileInput multiple label="File input" density="compact"/>1
+                        <VFileInput multiple label="File input" density="compact" />1
                     </VWindowItem>
                 </VWindow>
             </VCardText>
