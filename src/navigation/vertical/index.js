@@ -28,7 +28,7 @@ export default [
   },
     {
     title: 'Calendar',
-    to: { name: 'users' },
+    to: { name: 'calendar' },
     icon: { icon: 'ri-calendar-line' },
   },
     {

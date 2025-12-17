@@ -9,9 +9,7 @@
 
             <VCardText class="d-flex flex-wrap gap-4">
                 <div class="d-flex align-center">
-                    <!-- 👉 Search  -->
-                    <VTextField v-model="searchQuery" placeholder="Search Role" style="inline-size: 200px;"
-                        density="compact" class="me-3" @keyup="list" />
+                
                 </div>
 
                 <VSpacer />
@@ -79,6 +77,7 @@ const headers = [
     { title: 'BATHROOMS', key: 'bathrooms' },
     { title: 'SERVICES', key: 'services' },
     { title: 'STATUS', key: 'status' },
+    { title: 'Delete', key: 'delete' },
 
 ]
 
