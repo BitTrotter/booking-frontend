@@ -27,8 +27,8 @@ export const useCalendarStore = defineStore('calendar', {
   }),
   actions: {
     async fetchEvents() {
-      const { data, error } = await useApi(createUrl('/apps/calendar', {
-        query: {
+      const { data, error } = await useApi(createUrl('/reservations?search=', {
+        body: {
           calendars: this.selectedCalendars,
         },
       }))

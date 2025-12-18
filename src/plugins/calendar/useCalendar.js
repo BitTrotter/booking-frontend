@@ -189,30 +189,30 @@ export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpe
   // 👉 Fetch events
   const fetchEvents = (info, successCallback) => {
     // If there's no info => Don't make useless API call
-    if (!info)
-      return
+    // if (!info)
+    //   return
 
-    console.log(events);
-    successCallback(events.map(e => ({
-      ...e,
+    // console.log(events);
+    // successCallback(events.map(e => ({
+    //   ...e,
 
-      // Convert string representation of date to Date object
-      start: new Date(e.start),
-      end: new Date(e.end),
-    })))
-    // store.fetchEvents()
-    //   .then(r => {
-    //     successCallback(r.map(e => ({
-    //       ...e,
+    //   // Convert string representation of date to Date object
+    //   start: new Date(e.start),
+    //   end: new Date(e.end),
+    // })))
+    store.fetchEvents()
+      .then(r => {
+        successCallback(r.map(e => ({
+          ...e,
 
-    //       // Convert string representation of date to Date object
-    //       start: new Date(e.start),
-    //       end: new Date(e.end),
-    //     })))
-    //   })
-    //   .catch(e => {
-    //     console.error('Error occurred while fetching calendar events', e)
-    //   })
+          // Convert string representation of date to Date object
+          start: new Date(e.start),
+          end: new Date(e.end),
+        })))
+      })
+      .catch(e => {
+        console.error('Error occurred while fetching calendar events', e)
+      })
   }
 
 
