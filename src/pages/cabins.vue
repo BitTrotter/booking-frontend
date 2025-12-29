@@ -98,11 +98,7 @@ const list = async () => {
     data.value = resp;
 }
 
-watch(isEditRoleDialogVisible, (val) => {
-    if (!val) {
-        list()
-    }
-})
+
 
 const editItem = (item) => {
     // console.log('Edit item', item);

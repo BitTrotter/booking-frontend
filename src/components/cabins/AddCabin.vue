@@ -54,10 +54,22 @@ const submitCabin = async () => {
         }
         })
         console.log('Cabin saved successfully:', resp)
+        resetForm()
         dialogVisibleUpdate(false)
     } catch (error) {
         console.error('Error submitting cabin:', error)
     }
+}
+
+const resetForm = () => {
+  name.value = ''
+  description.value = ''
+  price_per_night.value = null
+  capacity.value = null
+  beds.value = null
+  bathrooms.value = null
+  services.value = []
+  status.value = 'available'
 }
 
 </script>

@@ -1,8 +1,16 @@
 <script setup>
+import { $api } from '@/utils/api'
 import { PERMISOS } from '@/utils/constants'
 import data from '@/views/js/datatable'
 import { VBtn, VTextField } from 'vuetify/components'
+import { onMounted, ref } from 'vue'
+const emit = defineEmits(['update:isDialogVisible'])
 
+let items = ref([])
+let selectedItem = ref(null)
+let dateRange = ref(null)
+let startDate = ref(null)
+let endDate = ref(null)
 
 const props = defineProps({
     isDialogVisible: {
@@ -10,63 +18,48 @@ const props = defineProps({
         required: true,
     },
 })
-
-const roles = ref([])
-const warning = ref(false)
-const emit = defineEmits(['update:isDialogVisible'])
-let warnError = ref("")
-const succses = ref(false)
-let firstName = ref('')
-let email = ref('')
-let mobile = ref('')
-let password = ref('')
-let checkbox = ref(false)
 const dialogVisibleUpdate = val => {
     emit('update:isDialogVisible', val)
 }
 
-const saveUser = async () => {
-    if (firstName.value.length === 0 || email.value.length === 0 || mobile.value.length === 0 || password.value.length === 0) {
-        warning.value = true
-        return
-    }
-    warning.value = false
-    const data = {
-        email: email.value,
-        name: firstName.value,
-        mobile: mobile.value,
-        password: password.value,
-        checkbox: checkbox.value,
-    }
-
+const getCabinsAsync = async () => {
+    console.log('Fetching cabins...')
     try {
 
-        const resp = await $api('/users', {
-            method: 'POST',
-            body: data,
-            onResponseError: ({ response }) => {
-                console.log(response);
-                warnError.value = 'Error' + response.statusText
-                throw new Error(response.statusText || 'Login failed')
-            }
-        })
-        if (await !resp.message === 201) {
-            warnError.value = 'Error. ' + resp.message
-            return
-        }
-        succses.value = true
-        firstName.value = ''
-        email.value = ''
-        mobile.value = ''
-        password.value = ''
-        checkbox.value = false
-        warnError.value = null
-        emit('update:isDialogVisible', false)
+        const cabins = await $api('cabins?search=')
+
+        return cabins
     } catch (error) {
-        warnError.value = 'Error. ' + error.message
+        console.error('There was a problem with the fetch operation:', error)
+        return []
+    }
+}
+
+const submitReservation = async () => {
+    console.log(dateRange)
+    const data = {
+        cabin_id: selectedItem.value.id,
+        start_date: startDate.value,
+        end_date: endDate.value,
     }
 
+    const resp = await $api('reservations', {
+        method: 'POST',
+        body: data,
+        onResponseError: ({ response }) => {
+            warnError.value = response.statusText
+            throw new Error(response.statusText || 'Login failed')
+        }
+    })
+    console.log('Reservation submitted:', resp)
+    dialogVisibleUpdate(false)
+
 }
+
+onMounted(async () => {
+    items.value = await getCabinsAsync()
+})
+
 </script>
 
 <template>
@@ -75,9 +68,12 @@ const saveUser = async () => {
             <!-- 👉 dialog close btn -->
             <DialogCloseBtn variant="text" size="default" @click="emit('update:isDialogVisible', false)" />
 
-            <VCombobox v-model="selectedItem" :items="items" placeholder="Select Cabin" class="mb-4" />
-            <AppDateTimePicker v-model="dateRange" label="Range" placeholder="Select date"
-                :config="{ mode: 'range' }" />
+            <VCombobox v-model="selectedItem" :items="items" item-title="name" item-value="id"
+                placeholder="Select Cabin" class="mb-4" />
+            <AppDateTimePicker class="mb-4" v-model="startDate" label="Start date" placeholder="Start date"/>
+            <AppDateTimePicker class="mb-4" v-model="endDate" label="End date" placeholder="End date"/>
+
+            <VBtn color="primary" class="mt-4" @click="submitReservation">Submit Reservation</VBtn>
 
         </VCard>
     </VDialog>
