@@ -1,5 +1,5 @@
-export const staticPrimaryColor = '#666CFF'
-export const staticPrimaryDarkenColor = '#5C61E6'
+export const staticPrimaryColor = '#a68a64'
+export const staticPrimaryDarkenColor = '#886e4b'
 export const themes = {
   light: {
     dark: false,
@@ -91,9 +91,9 @@ export const themes = {
       'error': '#FF4D49',
       'error-darken-1': '#E64542',
       'on-error': '#fff',
-      'background': '#282A42',
+      'background': '#191a24',
       'on-background': '#EAEAFF',
-      'surface': '#30334E',
+      'surface': '#2e2f3d',
       'on-surface': '#EAEAFF',
       'grey-50': '#2A2E42',
       'grey-100': '#2F3349',
@@ -106,8 +106,8 @@ export const themes = {
       'grey-800': '#CFD3EC',
       'grey-900': '#E7E9F6',
       'perfect-scrollbar-thumb': '#4a5072',
-      'skin-bordered-background': '#30334E',
-      'skin-bordered-surface': '#30334E',
+      'skin-bordered-background': '#2e2f3d',
+      'skin-bordered-surface': '#2e2f3d',
       'expansion-panel-text-custom-bg': '#333851',
       'track-bg': '#3C3F59',
       'chat-bg': '#343752',
@@ -126,7 +126,7 @@ export const themes = {
       'dragged-opacity': 0.1,
       'border-color': '#EAEAFF',
       'border-opacity': 0.12,
-      'table-header-color': '#3A3E5B',
+      'table-header-color': '#1f2029',
       'high-emphasis-opacity': 0.9,
       'medium-emphasis-opacity': 0.7,
 
