@@ -26,12 +26,13 @@
             </VCardText>
             <VDataTable :headers="headers" :items="data" :items-per-page="5" class="text-no-wrap">
          
-                <template #item.start_date="{ item }" >
-                    {{ new Date(item.start_date).toLocaleDateString() }}
+                <template #item.start="{ item }" >
+                    
+                    {{ new Date(item.start).toLocaleDateString() }}
 
                 </template>
-                <template #item.end_date="{ item }">
-                    {{ new Date(item.end_date).toLocaleDateString() }}
+                <template #item.end="{ item }">
+                    {{ new Date(item.end).toLocaleDateString() }}
                 </template>
             </VDataTable>
 
@@ -52,8 +53,8 @@ import AddCabin from '@/components/cabins/AddCabin.vue';
 import { onMounted } from 'vue';
 const headers = [
     { title: 'ID', key: 'id' },
-    { title: 'Start Date', key: 'start_date' },
-    { title: 'End Date', key: 'end_date' },
+    { title: 'Start Date', key: 'start' },
+    { title: 'End Date', key: 'end' },
     { title: 'Total Price', key: 'total_price' },
     { title: 'Status', key: 'status' },
 ]

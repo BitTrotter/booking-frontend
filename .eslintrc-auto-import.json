@@ -351,6 +351,13 @@
     "watchTriggerable": true,
     "watchWithFilter": true,
     "whenever": true,
-    "PERMISOS": true
+    "PERMISOS": true,
+    "AUTH_STORAGE_KEYS": true,
+    "clearAuthSession": true,
+    "getAccessToken": true,
+    "getUserData": true,
+    "handleUnauthorized": true,
+    "isAuthenticated": true,
+    "redirectToLogin": true
   }
 }

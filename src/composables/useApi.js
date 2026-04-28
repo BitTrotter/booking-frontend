@@ -1,5 +1,6 @@
 import { createFetch } from '@vueuse/core'
 import { destr } from 'destr'
+import { getAccessToken, handleUnauthorized } from '@/utils/auth'
 
 export const useApi = createFetch({
   baseUrl: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -11,7 +12,7 @@ export const useApi = createFetch({
   options: {
     refetch: true,
     async beforeFetch({ options }) {
-      const accessToken = localStorage.getItem('accessToken');
+      const accessToken = getAccessToken()
       if (accessToken) {
         options.headers = {
           ...options.headers,
@@ -34,6 +35,12 @@ export const useApi = createFetch({
       }
       
       return { data: parsedData, response }
+    },
+    onFetchError(ctx) {
+      if (ctx.response?.status === 401)
+        handleUnauthorized()
+
+      return ctx
     },
   },
 })

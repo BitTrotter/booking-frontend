@@ -1,6 +1,7 @@
 <script setup>
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import avatar1 from '@images/avatars/avatar-1.png'
+import { clearAuthSession } from '@/utils/auth'
 const router = useRouter()
 
 const userProfileList = [
@@ -43,8 +44,7 @@ const userProfileList = [
   },
 ]
 const  logout = async () => {
-  localStorage.removeItem('userData')
-  localStorage.removeItem('accessToken')
+  clearAuthSession()
   await router.push('/login')
 }
 const user = localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData')) : null

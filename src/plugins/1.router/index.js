@@ -2,6 +2,7 @@ import { p } from '@antfu/utils'
 import { setupLayouts } from 'virtual:generated-layouts'
 import { createRouter, createWebHistory } from 'vue-router/auto'
 import { setupGuards } from './guards'
+import { isAuthenticated } from '@/utils/auth'
 
 function recursiveLayouts(route) {
   if (route.children) {
@@ -27,9 +28,7 @@ const router = createRouter({
     path: '/',
     name: 'index',
     redirect: to => {
-      // TODO: Get type from backend
-      const userData = localStorage.getItem('userData');
-      if (!userData)
+      if (!isAuthenticated())
         return { name: 'login', query: to.query }
       return { name: 'dashboard', query: to.query }
     },
