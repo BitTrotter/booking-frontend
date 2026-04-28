@@ -1,3 +1,5 @@
+import { $api } from '@/utils/api'
+
 export const useCalendarStore = defineStore('calendar', {
   // arrow function recommended for full type inference
   state: () => ({
@@ -26,17 +28,10 @@ export const useCalendarStore = defineStore('calendar', {
     selectedCalendars: ['Personal', 'Business', 'Family', 'Holiday', 'ETC'],
   }),
   actions: {
-    async fetchEvents() {
-      const { data, error } = await useApi(createUrl('/reservations?search=', {
-        body: {
-          calendars: this.selectedCalendars,
-        },
-      }))
-
-      if (error.value)
-        return error.value
-      
-      return data.value
+    async fetchEvents(search = '') {
+      return await $api(`/reservations?search=${encodeURIComponent(search ?? '')}`, {
+        method: 'GET',
+      })
     },
     async addEvent(event) {
       await $api('/apps/calendar', {

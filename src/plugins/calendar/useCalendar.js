@@ -150,6 +150,40 @@ export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpe
   // 👉 Calendar template ref
   const refCalendar = ref()
 
+  const isDateOnlyString = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+  const isMidnightIsoLike = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[T ]00:00(:00(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?$/.test(value)
+  const isDateTimeNoTz = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/.test(value) && !/(Z|[+-]\d{2}:\d{2})$/.test(value)
+
+  // `new Date('YYYY-MM-DD')` is parsed as UTC in JS, which shifts the day
+  // for negative offsets (e.g. America/Mexico_City). Parse date-only strings
+  // as local dates to keep the intended calendar day.
+  const parseToLocalDate = value => {
+    if (!value)
+      return null
+
+    if (isDateOnlyString(value) || isMidnightIsoLike(value)) {
+      const [year, month, day] = String(value).slice(0, 10).split('-').map(Number)
+      const dt = new Date(year, month - 1, day)
+
+      return Number.isNaN(dt.getTime()) ? null : dt
+    }
+
+    // Handle `YYYY-MM-DD HH:mm:ss` and `YYYY-MM-DDTHH:mm:ss` without timezone reliably as local time
+    if (isDateTimeNoTz(value)) {
+      const normalized = String(value).replace('T', ' ')
+      const [datePart, timePart] = normalized.split(' ')
+      const [year, month, day] = datePart.split('-').map(Number)
+      const [hour, minute, second = '0'] = timePart.split(':')
+      const dt = new Date(year, month - 1, day, Number(hour), Number(minute), Number(second))
+
+      return Number.isNaN(dt.getTime()) ? null : dt
+    }
+
+    const dt = new Date(value)
+
+    return Number.isNaN(dt.getTime()) ? null : dt
+  }
+
 
   // 👉 Calendar colors
   const calendarsColor = {
@@ -201,14 +235,48 @@ export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpe
     //   end: new Date(e.end),
     // })))
     store.fetchEvents()
-      .then(r => {
-        successCallback(r.map(e => ({
-          ...e,
+      .then(response => {
+        const rawEvents = Array.isArray(response)
+          ? response
+          : (response?.data ?? response?.reservations ?? [])
 
-          // Convert string representation of date to Date object
-          start: new Date(e.start),
-          end: new Date(e.end),
-        })))
+        if (!Array.isArray(rawEvents)) {
+          console.error('Calendar events response is not an array:', response)
+          successCallback([])
+
+          return
+        }
+
+        const normalizedEvents = rawEvents.map(e => {
+          const start = e?.start ?? e?.start_date ?? e?.startDate
+          const end = e?.end ?? e?.end_date ?? e?.endDate
+
+          const startDate = parseToLocalDate(start)
+          const endDate = parseToLocalDate(end)
+
+          const isAllDayFromDates = (isDateOnlyString(start) || isMidnightIsoLike(start)) && (isDateOnlyString(end) || isMidnightIsoLike(end))
+          const allDay = e?.allDay ?? isAllDayFromDates
+
+          // FullCalendar treats `end` as exclusive for all-day events.
+          // If API dates are inclusive (common for date ranges), add 1 day to `end`.
+          const endForCalendar = allDay && endDate
+            ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 1)
+            : endDate
+
+          return {
+            ...e,
+            title: e?.title ?? e?.name ?? (e?.cabin?.name ? `Cabin: ${e.cabin.name}` : null) ?? (e?.id ? `Reservation #${e.id}` : 'Reservation'),
+            start: startDate ?? start,
+            end: endForCalendar ?? end,
+            allDay,
+            extendedProps: {
+              ...(e?.extendedProps ?? {}),
+              calendar: e?.extendedProps?.calendar ?? e?.calendar ?? 'Business',
+            },
+          }
+        })
+
+        successCallback(normalizedEvents)
       })
       .catch(e => {
         console.error('Error occurred while fetching calendar events', e)

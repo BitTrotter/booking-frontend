@@ -29,6 +29,7 @@ const emit = defineEmits([
 ])
 
 const store = useCalendarStore()
+console.log('🚀 ~ file: CalendarEventHandler.vue:17 ~ store:')
 const refForm = ref()
 
 // 👉 Event
