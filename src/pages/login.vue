@@ -12,6 +12,7 @@ import { themeConfig } from '@themeConfig'
 import { set } from '@vueuse/core'
 
 const error_login = ref(false)
+const isLoading = ref (false)
 const succes_login = ref(false)
 const route = useRoute()
 const router = useRouter()
@@ -36,6 +37,7 @@ form.value.password = '12345678'
 
 const login = async () => {
   try {
+    isLoading.value= true
     error_login.value = false
     const resp = await $api('auth/login', {
       method: 'POST',
@@ -54,15 +56,16 @@ const login = async () => {
     localStorage.setItem('userData', JSON.stringify(resp.user));
     localStorage.setItem('accessToken', resp.access_token);
 
-    await nextTick(async()=>{
-     await setTimeout(()=>{
+    // await nextTick(async()=>{
+    //  await setTimeout(()=>{
         router.replace(route.query.to ? String(route.query.to): '/')
         
-      }, 2000)
+    //   }, 2000)
 
-    })
+    // })
     // navigateTo('/')
   } catch (error) {
+    isLoading.value= false
     error_login.value = true
     succes_login.value = true
     console.error('Login failed:', error)
@@ -82,7 +85,8 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
 <template>
   <RouterLink to="/">
     <div class="app-logo auth-logo">
-      <VNodeRenderer :nodes="themeConfig.app.logo" />
+        <img  src="https://cdn.prod.website-files.com/68c9ad8cc3947459a003d444/68ec6c2d28c92e25c293ecb3_67360c883c0ba3f1d85cbb20cc2f1c80_logo%23a68a64.png" class="auth-illustration " style="width:60px" alt="auth-illustration">
+      <img >
       <h1 class="app-logo-title">
         {{ themeConfig.app.title }}
       </h1>
@@ -92,7 +96,10 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
   <VRow no-gutters class="auth-wrapper">
     <VCol md="8" class="d-none d-md-flex align-center justify-center position-relative">
       <div class="d-flex align-center justify-center pa-10">
-        <img :src="authV2LoginIllustration" class="auth-illustration w-100" alt="auth-illustration">
+         <h1 class="app-logo-title">
+        Rocky Cabbins
+      </h1>
+        <img src="https://cdn.prod.website-files.com/68c9ad8cc3947459a003d444/68ec6c2d28c92e25c293ecb3_67360c883c0ba3f1d85cbb20cc2f1c80_logo%23a68a64.png" class="auth-illustration w-100" alt="auth-illustration">
       </div>
       <VImg :src="authV2LoginMask" class="d-none d-md-flex auth-footer-mask" alt="auth-mask" />
     </VCol>
@@ -101,11 +108,11 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
       <VCard flat :max-width="500" class="mt-12 mt-sm-0 pa-5 pa-lg-7">
         <VCardText>
           <h4 class="text-h4 mb-1">
-            Welcome to <span class="text-capitalize">{{ themeConfig.app.title }}! 👋🏻s</span>
+            Welcome to <span class="text-capitalize">{{ themeConfig.app.title }}</span>
           </h4>
 
           <p class="mb-0">
-            Please sign-in to your account and start the adventure
+            Please sign-in 
           </p>
         </VCardText>
 
@@ -144,30 +151,22 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
                   set
                 </VBtn>
                 <VBtn block type="submit">
-                  Login
+                  <span v-if="!isLoading">
+                    Login
+                  </span>
+                    <VProgressCircular
+                        :size="20"
+                        color="red"
+                        indeterminate
+                        v-if="isLoading"
+                      />
                 </VBtn>
               </VCol>
 
               <!-- create account -->
-              <VCol cols="12" class="text-body-1 text-center">
-                <span class="d-inline-block">
-                  New on our platform?
-                </span>
-                <a class="text-primary ms-1 d-inline-block text-body-1" href="#">
-                  Create an account
-                </a>
-              </VCol>
+          
 
-              <VCol cols="12" class="d-flex align-center">
-                <VDivider />
-                <span class="mx-4 text-high-emphasis">or</span>
-                <VDivider />
-              </VCol>
-
-              <!-- auth providers -->
-              <VCol cols="12" class="text-center">
-                <AuthProvider />
-              </VCol>
+            
             </VRow>
           </VForm>
         </VCardText>
