@@ -43,7 +43,7 @@ const userProfileList = [
     href: '#',
   },
 ]
-const  logout = async () => {
+const logout = async () => {
   clearAuthSession()
   await router.push('/login')
 }
@@ -52,28 +52,12 @@ console.log('user profile', user)
 </script>
 
 <template>
-  <VBadge
-    dot
-    bordered
-    location="bottom right"
-    offset-x="2"
-    offset-y="2"
-    color="success"
-    class="user-profile-badge"
-  >
-    <VAvatar
-      class="cursor-pointer"
-      size="38"
-    >
+  <VBadge dot bordered location="bottom right" offset-x="2" offset-y="2" color="success" class="user-profile-badge">
+    <VAvatar class="cursor-pointer" size="38">
       <VImg :src="avatar1" />
 
       <!-- SECTION Menu -->
-      <VMenu
-        activator="parent"
-        width="230"
-        location="bottom end"
-        offset="15px"
-      >
+      <VMenu activator="parent" width="230" location="bottom end" offset="15px">
         <VList>
           <VListItem class="px-4" v-if="user">
             <div class="d-flex gap-x-2 align-center">
@@ -86,56 +70,31 @@ console.log('user profile', user)
                   {{ user ? user.name : 'Guest' }}
                 </div>
                 <div class="text-capitalize text-caption text-disabled">
-                  {{ user ? user.role.name : 'Guest' }}
+                  {{ user ? user.roles[0] : 'Guest' }}
                 </div>
               </div>
             </div>
           </VListItem>
 
           <PerfectScrollbar :options="{ wheelPropagation: false }">
-            <template
-              v-for="item in userProfileList"
-              :key="item.title"
-            >
-              <VListItem
-                v-if="item.type === 'navItem'"
-                :href="item.href"
-                class="px-4"
-              >
+            <template v-for="item in userProfileList" :key="item.title">
+              <VListItem v-if="item.type === 'navItem'" :href="item.href" class="px-4">
                 <template #prepend>
-                  <VIcon
-                    :icon="item.icon"
-                    size="22"
-                  />
+                  <VIcon :icon="item.icon" size="22" />
                 </template>
 
                 <VListItemTitle>{{ item.title }}</VListItemTitle>
 
-                <template
-                  v-if="item.chipsProps"
-                  #append
-                >
-                  <VChip
-                    v-bind="item.chipsProps"
-                    variant="elevated"
-                  />
+                <template v-if="item.chipsProps" #append>
+                  <VChip v-bind="item.chipsProps" variant="elevated" />
                 </template>
               </VListItem>
 
-              <VDivider
-                v-else
-                class="my-1"
-              />
+              <VDivider v-else class="my-1" />
             </template>
 
             <VListItem class="px-4">
-              <VBtn
-                block
-                color="error"
-                size="small"
-                append-icon="ri-logout-box-r-line"
-                @click=logout()
-              >
+              <VBtn block color="error" size="small" append-icon="ri-logout-box-r-line" @click=logout()>
                 Logout
               </VBtn>
             </VListItem>

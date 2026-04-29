@@ -25,9 +25,17 @@
             Edit
           </VBtn>
         </template>
+        <template #item.roles="{ item }">
+          <div class="d-flex flex-wrap gap-2 align-items-left">
+            <VChip v-for="role in item.roles" class="ma-1">
+              {{ role }}
+            </VChip>
+          </div>
+        </template>
       </VDataTable>
-      <AddUsers v-model:isDialogVisible="isAddRoleDialogVisible" />
-      <EditUsers v-model:isDialogVisible="isEditDialogVisible" :user="selectedUser" @user-updated="list" />
+      <AddUsers v-model:isDialogVisible="isAddRoleDialogVisible" :roles="roles" />
+      <EditUsers v-model:isDialogVisible="isEditDialogVisible" :user="selectedUser" :roles="roles"
+        @user-updated="list" />
 
     </VCard>
   </div>
@@ -38,19 +46,20 @@
 // import data from '@/views/js/datatable'
 import AddUsers from '@/components/booking/role/AddUsers.vue';
 import EditUsers from '@/components/booking/role/EditUsers.vue';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 
 const headers = [
   { title: 'Edit', key: 'edit' },
   { title: 'Name', key: 'name' },
   { title: 'Email', key: 'email' },
-  { title: 'Role', key: 'rol' },
+  { title: 'Role', key: 'roles' },
 ]
 
 const searchQuery = ref('')
 const isAddRoleDialogVisible = ref(false)
 console.log(PERMISOS);
 const data = ref([])
+const roles = ref([])
 let warningError = ref('')
 
 const selectedUser = ref(null);
@@ -69,6 +78,21 @@ const list = async () => {
 
 }
 
+const getRoles = async () => {
+  const resp = await $api('/role', {
+    method: 'GET',
+    onResponseError: ({ response }) => {
+      warningError.value = response.statusText
+      throw new Error(response.statusText || 'Login failed')
+    }
+  })
+
+  roles.value = (resp.roles || []).map(role => ({
+    // id: role.id,
+    name: role.name,
+  }))
+}
+
 
 const editItem = (item) => {
   console.log('Edit item', item);
@@ -85,6 +109,17 @@ const openEdit = (user) => {
 
 onMounted(() => {
   list()
+  getRoles()
+})
+
+watch(isAddRoleDialogVisible, visible => {
+  if (!visible)
+    list()
+})
+
+watch(isEditDialogVisible, visible => {
+  if (!visible)
+    list()
 })
 
 

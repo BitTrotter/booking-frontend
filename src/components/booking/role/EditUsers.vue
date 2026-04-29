@@ -9,6 +9,10 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    roles: {
+        type: Array,
+        default: () => [],
+    },
     user: {
         type: Object,
         required: true,
@@ -27,7 +31,17 @@ let password = ref('')
 let checkbox = ref(false)
 let permissions = ref([])
 let currentTab = ref(0)
-let tabItemContent = ref('Content for Tab 1')
+let selectedRoles = ref([])
+
+const normalizeRoles = roles =>
+    (roles || [])
+        .map(role => {
+            if (typeof role === 'string')
+                return role
+
+            return role?.name || ''
+        })
+        .filter(Boolean)
 
 
 const dialogVisibleUpdate = val => {
@@ -36,6 +50,7 @@ const dialogVisibleUpdate = val => {
 
 watch(() => props.user, (newUser) => {
     if (newUser) {
+
         firstName.value = newUser.name || ''
         email.value = newUser.email || ''
         mobile.value = newUser.mobile || ''
@@ -43,7 +58,9 @@ watch(() => props.user, (newUser) => {
         checkbox.value = newUser.checkbox || false
         permissions.value = newUser.permissions || []
         roles.value = newUser.roles || []
+        selectedRoles.value = normalizeRoles(newUser.roles)
     }
+
 }, { immediate: true })
 
 const saveUser = async () => {
@@ -58,6 +75,7 @@ const saveUser = async () => {
         mobile: mobile.value,
         password: password.value || undefined, // Only send if changed
         checkbox: checkbox.value,
+        roles: normalizeRoles(selectedRoles.value),
     }
 
     try {
@@ -65,7 +83,6 @@ const saveUser = async () => {
             method: 'PUT',
             body: data,
             onResponseError: ({ response }) => {
-                console.log(response);
                 warnError.value = 'Error ' + response.statusText
                 throw new Error(response.statusText || 'Update failed')
             }
@@ -79,6 +96,29 @@ const saveUser = async () => {
         emit('update:isDialogVisible', false)
         emit('user-updated')
         // Optionally emit to refresh list
+    } catch (error) {
+        warnError.value = 'Error. ' + error.message
+    }
+}
+const deleteUser = async () => {
+    try {
+        const resp = await $api(`/users/${props.user.id}`, {
+            method: 'DELETE',
+            onResponseError: ({ response }) => {
+                warnError.value = 'Error ' + response.statusText
+                throw new Error(response.statusText || 'Delete failed')
+            },
+
+        })
+        emit('update:isDialogVisible', false)
+        if (resp.message !== 200) { // Assuming 200 for success
+            warnError.value = 'Error. ' + resp.message
+            return
+        }
+        succses.value = true
+        warnError.value = null
+        emit('update:isDialogVisible', false)
+        emit('user-updated')
     } catch (error) {
         warnError.value = 'Error. ' + error.message
     }
@@ -157,18 +197,14 @@ const saveUser = async () => {
                             <VTab>Permissions</VTab>
                         </VTabs>
 
-                        <VWindow v-model="currentTab" class="mt-5">
-                            <VWindowItem value="0">
-                                <div class="d-flex flex-wrap gap-2">
-                                    <VChip v-for="role in roles" closable class="ma-1"
-                                        @click:close="isDefaultChipVisible = !isDefaultChipVisible">
-                                        {{ role }}
-                                    </VChip>
-                                </div>
+                        <VWindow v-model="currentTab" class="mt-5 v-window-pill">
+                            <VWindowItem value="0" class="pa-4 w-full">
+                                <VCombobox v-model="selectedRoles" :items="props.roles" item-title="name"
+                                    item-value="name" label="Roles" multiple chips />
                             </VWindowItem>
 
                             <VWindowItem value="1">
-                                <div class="d-flex flex-wrap gap-2">
+                                <div class="d-flex flex-wrap gap-2 align-items-left">
                                     <VChip v-for="permission in permissions" closable class="ma-1"
                                         @click:close="isDefaultChipVisible = !isDefaultChipVisible">
                                         {{ permission }}
@@ -197,8 +233,11 @@ const saveUser = async () => {
                                 Update User
                             </VBtn>
 
-                            <VBtn variant="tonal" color="secondary" @click="emit('update:isDialogVisible', false)">
+                            <VBtn color="secondary" @click="emit('update:isDialogVisible', false)">
                                 Cancel
+                            </VBtn>
+                            <VBtn color="error" @click="deleteUser()">
+                                Delete User
                             </VBtn>
                         </VCol>
                     </VRow>
