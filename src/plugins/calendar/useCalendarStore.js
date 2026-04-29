@@ -34,19 +34,19 @@ export const useCalendarStore = defineStore('calendar', {
       })
     },
     async addEvent(event) {
-      await $api('/apps/calendar', {
+      await $api('/reservations', {
         method: 'POST',
         body: event,
       })
     },
     async updateEvent(event) {
-      return await $api(`/apps/calendar/${event.id}`, {
+      return await $api(`/reservations/${event.id}`, {
         method: 'PUT',
         body: event,
       })
     },
     async removeEvent(eventId) {
-      return await $api(`/apps/calendar/${eventId}`, {
+      return await $api(`/reservations/${eventId}`, {
         method: 'DELETE',
       })
     },

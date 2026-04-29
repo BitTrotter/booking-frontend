@@ -28,7 +28,7 @@ const nextDay = new Date(new Date().getTime() + 24 * 60 * 60 * 1000)
 const nextMonth = date.getMonth() === 11 ? new Date(date.getFullYear() + 1, 0, 1) : new Date(date.getFullYear(), date.getMonth() + 1, 1)
 const prevMonth = date.getMonth() === 11 ? new Date(date.getFullYear() - 1, 0, 1) : new Date(date.getFullYear(), date.getMonth() - 1, 1)
 // start: '2024-07-11T18:50:00',
-    // end: '2024-07-15T18:50:00',
+// end: '2024-07-15T18:50:00',
 export const events = [
   {
     id: 1,
@@ -141,7 +141,7 @@ export const events = [
     },
   },
 ];
-export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpen) => {
+export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpen, callbacks = {}) => {
   const configStore = useConfigStore()
 
   // 👉 Store
@@ -197,25 +197,23 @@ export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpe
 
   // ℹ️ Extract event data from event API
   const extractEventDataFromEventApi = eventApi => {
-        
-    const { id, title, start, end, url, extendedProps: { calendar, guests, location, description }, allDay } = eventApi
-    
+    const rawExtendedProps = eventApi.extendedProps || {}
+    const { id, title, start, end, url, allDay } = eventApi
+
     return {
       id,
       title,
       start,
       end,
       url,
-      extendedProps: {
-        calendar,
-        guests,
-        location,
-        description,
-      },
       allDay,
+      ...rawExtendedProps,
+      extendedProps: {
+        ...rawExtendedProps,
+      },
     }
   }
-    
+
   if (typeof process !== 'undefined' && process.server)
     store.fetchEvents()
 
@@ -293,7 +291,7 @@ export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpe
     const existingEvent = calendarApi.value?.getEventById(String(updatedEventData.id))
     if (!existingEvent) {
       console.warn('Can\'t found event in calendar to update')
-      
+
       return
     }
 
@@ -410,30 +408,37 @@ export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpe
     navLinks: true,
     eventClassNames({ event: calendarEvent }) {
       const colorName = calendarsColor[calendarEvent._def.extendedProps.calendar]
-      
+
       return [
         // Background Color
         `bg-light-${colorName} text-${colorName}`,
       ]
     },
     eventClick({ event: clickedEvent, jsEvent }) {
-      // Prevent the default action
       jsEvent.preventDefault()
+
       if (clickedEvent.url) {
-        // Open the URL in a new tab
         window.open(clickedEvent.url, '_blank')
       }
 
-      // * Only grab required field otherwise it goes in infinity loop
-      // ! Always grab all fields rendered by form (even if it get `undefined`) otherwise due to Vue3/Composition API you might get: "object is not extensible"
-      event.value = extractEventDataFromEventApi(clickedEvent)
-      isEventHandlerSidebarActive.value = true
+      const eventData = extractEventDataFromEventApi(clickedEvent)
+
+      if (callbacks.onEventClick)
+        callbacks.onEventClick(eventData)
+      else {
+        event.value = eventData
+        isEventHandlerSidebarActive.value = true
+      }
     },
 
     // customButtons
     dateClick(info) {
-      event.value = { ...event.value, start: info.date }
-      isEventHandlerSidebarActive.value = true
+      if (callbacks.onDateClick)
+        callbacks.onDateClick(info)
+      else {
+        event.value = { ...event.value, start: info.date, end: info.date }
+        isEventHandlerSidebarActive.value = true
+      }
     },
 
     /*
@@ -478,7 +483,7 @@ export const useCalendar = (event, isEventHandlerSidebarActive, isLeftSidebarOpe
   watch(() => configStore.isAppRTL, val => {
     calendarApi.value?.setOption('direction', val ? 'rtl' : 'ltr')
   }, { immediate: true })
-  
+
   return {
     refCalendar,
     calendarOptions,

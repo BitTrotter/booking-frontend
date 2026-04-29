@@ -1,248 +1,281 @@
 <script setup>
-import { PERMISOS } from '@/utils/constants'
-import data from '@/views/js/datatable'
-import { VBtn, VTextField } from 'vuetify/components'
-import { onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps({
-    isDialogVisible: {
-        type: Boolean,
-        required: true,
-    },
-    roles: {
-        type: Array,
-        default: () => [],
-    },
-    user: {
-        type: Object,
-        required: true,
-    },
+  isDialogVisible: {
+    type: Boolean,
+    required: true,
+  },
+  roles: {
+    type: Array,
+    default: () => [],
+  },
+  user: {
+    type: Object,
+    required: true,
+  },
 })
 
-const roles = ref([])
-const warning = ref(false)
 const emit = defineEmits(['update:isDialogVisible', 'user-updated'])
-let warnError = ref("")
-const succses = ref(false)
-let firstName = ref('')
-let email = ref('')
-let mobile = ref('')
-let password = ref('')
-let checkbox = ref(false)
-let permissions = ref([])
-let currentTab = ref(0)
-let selectedRoles = ref([])
+const refForm = ref()
+const loading = ref(false)
+const snackBar = ref({
+  visible: false,
+  message: '',
+  color: 'success',
+})
+
+const firstName = ref('')
+const email = ref('')
+const mobile = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const selectedRoles = ref([])
+const isActive = ref(true)
+const permissions = ref([])
 
 const normalizeRoles = roles =>
-    (roles || [])
-        .map(role => {
-            if (typeof role === 'string')
-                return role
-
-            return role?.name || ''
-        })
-        .filter(Boolean)
-
+  (roles || [])
+    .map(role => {
+      if (typeof role === 'string')
+        return role
+      return role?.name || ''
+    })
+    .filter(Boolean)
 
 const dialogVisibleUpdate = val => {
-    emit('update:isDialogVisible', val)
+  emit('update:isDialogVisible', val)
 }
 
-watch(() => props.user, (newUser) => {
-    if (newUser) {
-
-        firstName.value = newUser.name || ''
-        email.value = newUser.email || ''
-        mobile.value = newUser.mobile || ''
-        password.value = '' // Don't pre-fill password
-        checkbox.value = newUser.checkbox || false
-        permissions.value = newUser.permissions || []
-        roles.value = newUser.roles || []
-        selectedRoles.value = normalizeRoles(newUser.roles)
-    }
-
+watch(() => props.user, newUser => {
+  if (newUser) {
+    firstName.value = newUser.name || ''
+    email.value = newUser.email || ''
+    mobile.value = newUser.mobile || ''
+    password.value = ''
+    confirmPassword.value = ''
+    isActive.value = newUser.is_active !== false
+    permissions.value = newUser.permissions || []
+    selectedRoles.value = normalizeRoles(newUser.roles)
+    refForm.value?.resetValidation()
+  }
 }, { immediate: true })
 
-const saveUser = async () => {
-    if (firstName.value.length === 0 || email.value.length === 0 || mobile.value.length === 0) {
-        warning.value = true
-        return
-    }
-    warning.value = false
-    const data = {
-        email: email.value,
-        name: firstName.value,
-        mobile: mobile.value,
-        password: password.value || undefined, // Only send if changed
-        checkbox: checkbox.value,
-        roles: normalizeRoles(selectedRoles.value),
-    }
-
-    try {
-        const resp = await $api(`/users/${props.user.id}`, {
-            method: 'PUT',
-            body: data,
-            onResponseError: ({ response }) => {
-                warnError.value = 'Error ' + response.statusText
-                throw new Error(response.statusText || 'Update failed')
-            }
-        })
-        if (resp.message !== 200) { // Assuming 200 for success
-            warnError.value = 'Error. ' + resp.message
-            return
-        }
-        succses.value = true
-        warnError.value = null
-        emit('update:isDialogVisible', false)
-        emit('user-updated')
-        // Optionally emit to refresh list
-    } catch (error) {
-        warnError.value = 'Error. ' + error.message
-    }
+const validatePasswords = () => {
+  if (password.value && password.value !== confirmPassword.value)
+    return 'Passwords do not match'
+  return true
 }
-const deleteUser = async () => {
-    try {
-        const resp = await $api(`/users/${props.user.id}`, {
-            method: 'DELETE',
-            onResponseError: ({ response }) => {
-                warnError.value = 'Error ' + response.statusText
-                throw new Error(response.statusText || 'Delete failed')
-            },
 
-        })
-        emit('update:isDialogVisible', false)
-        if (resp.message !== 200) { // Assuming 200 for success
-            warnError.value = 'Error. ' + resp.message
-            return
-        }
-        succses.value = true
-        warnError.value = null
-        emit('update:isDialogVisible', false)
-        emit('user-updated')
-    } catch (error) {
-        warnError.value = 'Error. ' + error.message
+const saveUser = async () => {
+  const validation = await refForm.value?.validate()
+  if (!validation?.valid)
+    return
+
+  if (password.value && password.value !== confirmPassword.value) {
+    snackBar.value = { visible: true, message: 'Passwords do not match', color: 'error' }
+    return
+  }
+
+  loading.value = true
+
+  try {
+    const payload = {
+      name: firstName.value,
+      email: email.value,
+      mobile: mobile.value,
+      roles: normalizeRoles(selectedRoles.value),
+      is_active: isActive.value,
     }
+
+    if (password.value)
+      payload.password = password.value
+
+    const resp = await $api(`/users/${props.user.id}`, {
+      method: 'PUT',
+      body: payload,
+      onResponseError: ({ response }) => {
+        throw new Error(response.statusText || 'Failed to update user')
+      },
+    })
+
+    snackBar.value = { visible: true, message: 'User updated successfully', color: 'success' }
+    emit('update:isDialogVisible', false)
+    emit('user-updated')
+  } catch (error) {
+    console.error(error)
+    snackBar.value = { visible: true, message: error.message || 'Failed to update user', color: 'error' }
+  } finally {
+    loading.value = false
+  }
+}
+
+const deleteUser = async () => {
+  if (!confirm('Are you sure you want to delete this user?')) return
+
+  loading.value = true
+
+  try {
+    await $api(`/users/${props.user.id}`, {
+      method: 'DELETE',
+      onResponseError: ({ response }) => {
+        throw new Error(response.statusText || 'Failed to delete user')
+      },
+    })
+
+    snackBar.value = { visible: true, message: 'User deleted successfully', color: 'success' }
+    emit('update:isDialogVisible', false)
+    emit('user-updated')
+  } catch (error) {
+    console.error(error)
+    snackBar.value = { visible: true, message: error.message || 'Failed to delete user', color: 'error' }
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
 <template>
-    <VDialog :model-value="props.isDialogVisible" max-width="750" @update:model-value="dialogVisibleUpdate">
-        <VCard class="refer-and-earn-dialog pa-3 pa-sm-11">
-            <!-- 👉 dialog close btn -->
-            <DialogCloseBtn variant="text" size="default" @click="emit('update:isDialogVisible', false)" />
+  <VDialog :model-value="props.isDialogVisible" max-width="500" @update:model-value="dialogVisibleUpdate">
+    <VCard>
+      <VCardTitle class="text-h5 font-weight-bold mb-2">Edit User</VCardTitle>
+      <VDivider />
 
-            <VCardText class="pa-5">
-                <VForm @submit.prevent="saveUser">
-                    <VRow>
-                        <!-- 👉 First Name -->
-                        <VCol cols="12">
-                            <VRow no-gutters>
-                                <VCol cols="12" md="3">
-                                    <label for="firstNameHorizontalIcons">First Name</label>
-                                </VCol>
+      <VCardText class="pa-6">
+        <VForm ref="refForm">
+          <VRow>
+            <VCol cols="12" md="6">
+              <VTextField
+                v-model="firstName"
+                label="Full Name"
+                placeholder="John Doe"
+                prepend-inner-icon="ri-user-line"
+                :rules="[v => !!v || 'Name is required']"
+                required
+              />
+            </VCol>
 
-                                <VCol cols="12" md="9">
-                                    <VTextField id="firstNameHorizontalIcons" v-model="firstName"
-                                        prepend-inner-icon="ri-user-line" placeholder="John" persistent-placeholder />
-                                </VCol>
-                            </VRow>
-                        </VCol>
+            <VCol cols="12" md="6">
+              <VSelect
+                v-model="isActive"
+                :items="[
+                  { title: 'Active', value: true },
+                  { title: 'Inactive', value: false }
+                ]"
+                label="Status"
+                prepend-inner-icon="ri-shield-check-line"
+              />
+            </VCol>
 
-                        <!-- 👉 Email -->
-                        <VCol cols="12">
-                            <VRow no-gutters>
-                                <VCol cols="12" md="3">
-                                    <label for="emailHorizontalIcons">Email</label>
-                                </VCol>
+            <VCol cols="12">
+              <VTextField
+                v-model="email"
+                label="Email"
+                placeholder="john@example.com"
+                prepend-inner-icon="ri-mail-line"
+                type="email"
+                :rules="[
+                  v => !!v || 'Email is required',
+                  v => /.+@.+\..+/.test(v) || 'Email must be valid'
+                ]"
+                required
+              />
+            </VCol>
 
-                                <VCol cols="12" md="9">
-                                    <VTextField id="emailHorizontalIcons" v-model="email"
-                                        prepend-inner-icon="ri-mail-line" placeholder="johndoe@email.com"
-                                        persistent-placeholder />
-                                </VCol>
-                            </VRow>
-                        </VCol>
+            <VCol cols="12">
+              <VTextField
+                v-model="mobile"
+                label="Mobile Number"
+                placeholder="+1 (555) 123-4567"
+                prepend-inner-icon="ri-phone-line"
+                :rules="[v => !!v || 'Mobile is required']"
+                required
+              />
+            </VCol>
 
-                        <!-- 👉 Mobile -->
-                        <VCol cols="12">
-                            <VRow no-gutters>
-                                <VCol cols="12" md="3">
-                                    <label for="mobileHorizontalIcons">Mobile</label>
-                                </VCol>
+            <VCol cols="12">
+              <VDivider class="my-2" />
+              <div class="text-body-2 font-weight-medium mb-3">Change Password (optional)</div>
+            </VCol>
 
-                                <VCol cols="12" md="9">
-                                    <VTextField id="mobileHorizontalIcons" v-model="mobile"
-                                        prepend-inner-icon="ri-phone-line" placeholder="+1 123 456 7890"
-                                        persistent-placeholder />
-                                </VCol>
-                            </VRow>
-                        </VCol>
+            <VCol cols="12" md="6">
+              <VTextField
+                v-model="password"
+                label="New Password"
+                placeholder="Leave blank to keep current"
+                prepend-inner-icon="ri-lock-line"
+                type="password"
+              />
+            </VCol>
 
-                        <!-- 👉 Password -->
-                        <VCol cols="12">
-                            <VRow no-gutters>
-                                <VCol cols="12" md="3">
-                                    <label for="passwordHorizontalIcons">Password (leave blank to keep current)</label>
-                                </VCol>
+            <VCol cols="12" md="6">
+              <VTextField
+                v-model="confirmPassword"
+                label="Confirm Password"
+                placeholder="••••••••"
+                prepend-inner-icon="ri-lock-line"
+                type="password"
+                :rules="[() => validatePasswords()]"
+              />
+            </VCol>
 
-                                <VCol cols="12" md="9">
-                                    <VTextField id="passwordHorizontalIcons" v-model="password"
-                                        prepend-inner-icon="ri-lock-line" placeholder="Password" type="password"
-                                        persistent-placeholder />
-                                </VCol>
-                            </VRow>
-                        </VCol>
-                        <VTabs v-model="currentTab" class="v-tabs-pill">
-                            <VTab>Roles</VTab>
-                            <VTab>Permissions</VTab>
-                        </VTabs>
+            <VCol cols="12">
+              <VDivider class="my-2" />
+            </VCol>
 
-                        <VWindow v-model="currentTab" class="mt-5 v-window-pill">
-                            <VWindowItem value="0" class="pa-4 w-full">
-                                <VCombobox v-model="selectedRoles" :items="props.roles" item-title="name"
-                                    item-value="name" label="Roles" multiple chips />
-                            </VWindowItem>
+            <VCol cols="12">
+              <VSelect
+                v-model="selectedRoles"
+                :items="props.roles"
+                item-title="name"
+                item-value="name"
+                label="Assign Roles"
+                prepend-inner-icon="ri-shield-user-line"
+                multiple
+                chips
+                clearable
+              />
+            </VCol>
 
-                            <VWindowItem value="1">
-                                <div class="d-flex flex-wrap gap-2 align-items-left">
-                                    <VChip v-for="permission in permissions" closable class="ma-1"
-                                        @click:close="isDefaultChipVisible = !isDefaultChipVisible">
-                                        {{ permission }}
-                                    </VChip>
-                                </div>
-                            </VWindowItem>
-                        </VWindow>
+            <VCol v-if="permissions.length > 0" cols="12">
+              <div class="text-body-2 font-weight-medium mb-3">Permissions</div>
+              <div class="d-flex flex-wrap gap-2">
+                <VChip
+                  v-for="(perm, index) in permissions"
+                  :key="`${props.user?.id}-${perm}-${index}`"
+                  size="small"
+                  variant="tonal"
+                >
+                  {{ perm }}
+                </VChip>
+              </div>
+            </VCol>
+          </VRow>
+        </VForm>
+      </VCardText>
 
-                        <!-- 👉 Checkbox -->
-                        <VCol cols="12">
-                            <VRow no-gutters>
-                                <VCol cols="12" md="3">
-                                    <label>Active</label>
-                                </VCol>
+      <VDivider />
 
-                                <VCol cols="12" md="9">
-                                    <VCheckbox v-model="checkbox" label="Is Active" />
-                                </VCol>
-                            </VRow>
+      <VCardText class="d-flex gap-3 pa-6 flex-wrap">
+        <VBtn
+          color="primary"
+          :loading="loading"
+          @click="saveUser"
+        >
+          Update User
+        </VBtn>
+        <VBtn color="secondary" variant="tonal" @click="dialogVisibleUpdate(false)">
+          Cancel
+        </VBtn>
+        <VBtn color="error" variant="tonal" :loading="loading" @click="deleteUser">
+          Delete User
+        </VBtn>
+      </VCardText>
 
-                        </VCol>
-
-                        <!-- 👉 Submit and Cancel -->
-                        <VCol cols="12" class="d-flex gap-4">
-                            <VBtn type="submit" color="primary" @click="saveUser">
-                                Update User
-                            </VBtn>
-
-                            <VBtn color="secondary" @click="emit('update:isDialogVisible', false)">
-                                Cancel
-                            </VBtn>
-                            <VBtn color="error" @click="deleteUser()">
-                                Delete User
-                            </VBtn>
-                        </VCol>
-                    </VRow>
-                </VForm>
-            </VCardText>
-        </VCard>
-    </VDialog>
+      <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
+        {{ snackBar.message }}
+      </VSnackbar>
+    </VCard>
+  </VDialog>
 </template>
+

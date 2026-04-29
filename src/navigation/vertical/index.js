@@ -24,13 +24,13 @@ export default [
   {
     title: 'Booking',
     to: { name: 'booking' },
-    icon: { icon: 'ri-calendar-line' },
+    icon: { icon: 'ri-bookmark-3-line' },
   },
-    {
+  {
     title: 'Calendar',
     to: { name: 'calendar' },
     icon: { icon: 'ri-calendar-line' },
   },
 
- 
+
 ]

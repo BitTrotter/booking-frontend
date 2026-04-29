@@ -7,10 +7,17 @@ import {
 
 // Components
 import CalendarEventHandler from '@/components/CalendarEventHandler.vue'
+import AddReservation from '@/components/booking/AddReservation.vue'
+import EditReservation from '@/components/booking/EditReservation.vue'
 
 // 👉 Event
 const event = ref(structuredClone(blankEvent))
 const isEventHandlerSidebarActive = ref(false)
+const isAddReservationDialogVisible = ref(false)
+const isEditReservationDialogVisible = ref(false)
+const selectedReservation = ref(null)
+const addReservationInitial = ref({})
+const currentDate = ref(new Date())
 
 watch(isEventHandlerSidebarActive, val => {
   if (!val)
@@ -19,31 +26,79 @@ watch(isEventHandlerSidebarActive, val => {
 
 const { isLeftSidebarOpen } = useResponsiveLeftSidebar()
 
+const openReservationForDate = info => {
+  addReservationInitial.value = {
+    start_date: info.date,
+    end_date: info.date,
+  }
+  isAddReservationDialogVisible.value = true
+}
+
+const openReservationForEvent = reservation => {
+  selectedReservation.value = reservation
+  isEditReservationDialogVisible.value = true
+}
+
+const jumpToToday = () => {
+  if (refCalendar.value?.getApi())
+    refCalendar.value.getApi().today()
+}
+
 // 👉 useCalendar
-const { refCalendar, calendarOptions, addEvent, updateEvent, removeEvent, jumpToDate } = useCalendar(event, isEventHandlerSidebarActive, isLeftSidebarOpen)
+const { refCalendar, calendarOptions, addEvent, updateEvent, removeEvent, jumpToDate, refetchEvents } = useCalendar(
+  event,
+  isEventHandlerSidebarActive,
+  isLeftSidebarOpen,
+  {
+    onEventClick: openReservationForEvent,
+    onDateClick: openReservationForDate,
+  },
+)
 
 </script>
 <template>
-  <div>
-    <VCard title="Calendario 📆">
+  <div class="calendar-page">
+    <VCard class="border-0 shadow-none mb-4">
+      <VCardText class="pb-0">
+        <div class="d-flex flex-wrap justify-space-between align-center gap-4 pb-4">
+          <div>
+            <div class="text-h4 font-weight-bold">Calendar</div>
+            <div class="text-body-2 text-medium-emphasis">
+              Visualize all reservations and manage availability at a glance.
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 align-center flex-wrap">
+            <VBtn variant="tonal" prepend-icon="ri-calendar-today-line" @click="jumpToToday">
+              Today
+            </VBtn>
+
+            <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddReservationDialogVisible = true">
+              New Reservation
+            </VBtn>
+          </div>
+        </div>
+      </VCardText>
+    </VCard>
+
+    <VCard>
       <VLayout style="z-index: 0;">
         <VMain>
           <VCard flat>
-            <FullCalendar
-              ref="refCalendar"
-              :options="calendarOptions"
-            />
+            <FullCalendar ref="refCalendar" :options="calendarOptions" />
           </VCard>
         </VMain>
       </VLayout>
     </VCard>
-    <CalendarEventHandler
-      v-model:isDrawerOpen="isEventHandlerSidebarActive"
-      :event="event"
-      @add-event="addEvent"
-      @update-event="updateEvent"
-      @remove-event="removeEvent"
-    />
+
+    <CalendarEventHandler v-model:isDrawerOpen="isEventHandlerSidebarActive" :event="event" @add-event="addEvent"
+      @update-event="updateEvent" @remove-event="removeEvent" />
+
+    <AddReservation v-model:isDialogVisible="isAddReservationDialogVisible" :initial-reservation="addReservationInitial"
+      @reservation-created="refetchEvents" />
+
+    <EditReservation v-model:isDialogVisible="isEditReservationDialogVisible" :reservation="selectedReservation"
+      @reservation-updated="refetchEvents" />
   </div>
 </template>
 <style lang="scss">
@@ -77,7 +132,7 @@ const { refCalendar, calendarOptions, addEvent, updateEvent, removeEvent, jumpTo
     }
   }
 
-  & ~ .flatpickr-calendar .flatpickr-weekdays {
+  &~.flatpickr-calendar .flatpickr-weekdays {
     margin-block: 0 4px;
   }
 }

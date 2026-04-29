@@ -1,6 +1,5 @@
 <script setup>
-import { VBtn, VTextField } from 'vuetify/components'
-
+import { ref } from 'vue'
 
 const props = defineProps({
   isDialogVisible: {
@@ -13,196 +12,218 @@ const props = defineProps({
   },
 })
 
-const warning = ref(false)
 const emit = defineEmits(['update:isDialogVisible'])
-let warnError = ref("")
-const succses = ref(false)
-let firstName = ref('')
-let email = ref('')
-let mobile = ref('')
-let password = ref('')
-let checkbox = ref(false)
-let selectedRol = ref([])
+const refForm = ref()
+const loading = ref(false)
+const snackBar = ref({
+  visible: false,
+  message: '',
+  color: 'success',
+})
+
+const firstName = ref('')
+const email = ref('')
+const mobile = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const selectedRoles = ref([])
+const isActive = ref(true)
 
 const normalizeRoles = roles =>
   (roles || [])
     .map(role => {
       if (typeof role === 'string')
         return role
-
       return role?.name || ''
     })
     .filter(Boolean)
 
+const resetForm = () => {
+  firstName.value = ''
+  email.value = ''
+  mobile.value = ''
+  password.value = ''
+  confirmPassword.value = ''
+  selectedRoles.value = []
+  isActive.value = true
+  refForm.value?.resetValidation()
+}
+
 const dialogVisibleUpdate = val => {
   emit('update:isDialogVisible', val)
+  if (!val)
+    resetForm()
+}
+
+const validatePasswords = () => {
+  if (password.value !== confirmPassword.value)
+    return 'Passwords do not match'
+  return true
 }
 
 const saveUser = async () => {
-  if (firstName.value.length === 0 || email.value.length === 0 || mobile.value.length === 0 || password.value.length === 0) {
-    warning.value = true
+  const validation = await refForm.value?.validate()
+  if (!validation?.valid)
+    return
+
+  if (password.value !== confirmPassword.value) {
+    snackBar.value = { visible: true, message: 'Passwords do not match', color: 'error' }
     return
   }
-  warning.value = false
-  const data = {
-    email: email.value,
-    name: firstName.value,
-    mobile: mobile.value,
-    password: password.value,
-    checkbox: checkbox.value,
-    roles: normalizeRoles(selectedRol.value),
-  }
+
+  loading.value = true
 
   try {
+    const payload = {
+      name: firstName.value,
+      email: email.value,
+      mobile: mobile.value,
+      password: password.value,
+      roles: normalizeRoles(selectedRoles.value),
+      is_active: isActive.value,
+    }
 
     const resp = await $api('/users', {
       method: 'POST',
-      body: data,
+      body: payload,
       onResponseError: ({ response }) => {
-        console.log(response);
-        warnError.value = 'Error' + response.statusText
-        throw new Error(response.statusText || 'Login failed')
-      }
+        throw new Error(response.statusText || 'Failed to create user')
+      },
     })
-    if (await !resp.message === 201) {
-      warnError.value = 'Error. ' + resp.message
-      return
-    }
-    succses.value = true
-    firstName.value = ''
-    email.value = ''
-    mobile.value = ''
-    password.value = ''
-    checkbox.value = false
-    warnError.value = null
+
+    snackBar.value = { visible: true, message: 'User created successfully', color: 'success' }
+    resetForm()
     emit('update:isDialogVisible', false)
   } catch (error) {
-    warnError.value = 'Error. ' + error.message
+    console.error(error)
+    snackBar.value = { visible: true, message: error.message || 'Failed to create user', color: 'error' }
+  } finally {
+    loading.value = false
   }
-
 }
 </script>
 
 <template>
-  <VDialog :model-value="props.isDialogVisible" max-width="750" @update:model-value="dialogVisibleUpdate">
-    <VCard class="refer-and-earn-dialog pa-3 pa-sm-11">
-      <!-- 👉 dialog close btn -->
-      <DialogCloseBtn variant="text" size="default" @click="emit('update:isDialogVisible', false)" />
+  <VDialog :model-value="props.isDialogVisible" max-width="500" @update:model-value="dialogVisibleUpdate">
+    <VCard>
+      <VCardTitle class="text-h5 font-weight-bold mb-2">Add New User</VCardTitle>
+      <VDivider />
 
-      <VCardText class="pa-5">
-        <VForm @submit.prevent="(saveUser)">
+      <VCardText class="pa-6">
+        <VForm ref="refForm">
           <VRow>
-            <!-- 👉 First Name -->
-            <VCol cols="12">
-              <VRow no-gutters>
-                <VCol cols="12" md="3">
-                  <label for="firstNameHorizontalIcons">First Name</label>
-                </VCol>
-
-                <VCol cols="12" md="9">
-                  <VTextField id="firstNameHorizontalIcons" v-model="firstName" prepend-inner-icon="ri-user-line"
-                    placeholder="John" persistent-placeholder />
-                </VCol>
-              </VRow>
+            <VCol cols="12" md="6">
+              <VTextField
+                v-model="firstName"
+                label="Full Name"
+                placeholder="John Doe"
+                prepend-inner-icon="ri-user-line"
+                :rules="[v => !!v || 'Name is required']"
+                required
+              />
             </VCol>
 
-            <!-- 👉 Email -->
-            <VCol cols="12">
-              <VRow no-gutters>
-                <VCol cols="12" md="3">
-                  <label for="emailHorizontalIcons">Email</label>
-                </VCol>
-
-                <VCol cols="12" md="9">
-                  <VTextField id="emailHorizontalIcons" v-model="email" prepend-inner-icon="ri-mail-line"
-                    placeholder="johndoe@email.com" persistent-placeholder />
-                </VCol>
-              </VRow>
+            <VCol cols="12" md="6">
+              <VSelect
+                v-model="isActive"
+                :items="[
+                  { title: 'Active', value: true },
+                  { title: 'Inactive', value: false }
+                ]"
+                label="Status"
+                prepend-inner-icon="ri-shield-check-line"
+              />
             </VCol>
 
-            <!-- 👉 Mobile -->
             <VCol cols="12">
-              <VRow no-gutters>
-                <VCol cols="12" md="3">
-                  <label for="mobileHorizontalIcons">Mobile</label>
-                </VCol>
-
-                <VCol cols="12" md="9">
-                  <VTextField id="mobileHorizontalIcons" v-model="mobile" type="number"
-                    prepend-inner-icon="ri-smartphone-line" placeholder="+1 123 456 7890" persistent-placeholder />
-                </VCol>
-              </VRow>
+              <VTextField
+                v-model="email"
+                label="Email"
+                placeholder="john@example.com"
+                prepend-inner-icon="ri-mail-line"
+                type="email"
+                :rules="[
+                  v => !!v || 'Email is required',
+                  v => /.+@.+\..+/.test(v) || 'Email must be valid'
+                ]"
+                required
+              />
             </VCol>
 
-            <!-- 👉 Password -->
             <VCol cols="12">
-              <VRow no-gutters>
-                <VCol cols="12" md="3">
-                  <label for="passwordHorizontalIcons">Password</label>
-                </VCol>
-
-                <VCol cols="12" md="9">
-                  <VTextField id="passwordHorizontalIcons" v-model="password" prepend-inner-icon="ri-lock-line"
-                    autocomplete="on" type="password" placeholder="············" persistent-placeholder />
-                </VCol>
-              </VRow>
-            </VCol>
-            <VCol cols="12">
-              <VRow no-gutters>
-                <VCol cols="12" md="3">
-                  <label for="passwordHorizontalIcons">Roles</label>
-                </VCol>
-
-                <VCol cols="12" md="9">
-
-                  <VCombobox v-model="selectedRol" :items="props.roles" item-title="name" item-value="name"
-                    label="Roles" multiple chips />
-                </VCol>
-              </VRow>
+              <VTextField
+                v-model="mobile"
+                label="Mobile Number"
+                placeholder="+1 (555) 123-4567"
+                prepend-inner-icon="ri-phone-line"
+                :rules="[v => !!v || 'Mobile is required']"
+                required
+              />
             </VCol>
 
-
-            <!-- 👉 Checkbox -->
-            <VCol cols="12">
-              <VRow no-gutters>
-                <VCol cols="12" md="3" />
-                <VCol cols="12" md="9">
-                  <VCheckbox v-model="checkbox" label="Remember me" />
-                </VCol>
-              </VRow>
+            <VCol cols="12" md="6">
+              <VTextField
+                v-model="password"
+                label="Password"
+                placeholder="••••••••"
+                prepend-inner-icon="ri-lock-line"
+                type="password"
+                :rules="[v => !!v || 'Password is required']"
+                required
+              />
             </VCol>
 
-            <!-- 👉 submit and reset button -->
+            <VCol cols="12" md="6">
+              <VTextField
+                v-model="confirmPassword"
+                label="Confirm Password"
+                placeholder="••••••••"
+                prepend-inner-icon="ri-lock-line"
+                type="password"
+                :rules="[
+                  v => !!v || 'Confirm password is required',
+                  () => validatePasswords()
+                ]"
+                required
+              />
+            </VCol>
+
             <VCol cols="12">
-              <VRow no-gutters>
-                <VCol cols="12" md="3" />
-                <VCol cols="12" md="9">
-                  <VBtn type="submit" class="me-4">
-                    Submit
-                  </VBtn>
-                  <VBtn color="secondary" variant="tonal" type="reset">
-                    Reset
-                  </VBtn>
-                </VCol>
-              </VRow>
+              <VSelect
+                v-model="selectedRoles"
+                :items="props.roles"
+                item-title="name"
+                item-value="name"
+                label="Assign Roles"
+                prepend-inner-icon="ri-shield-user-line"
+                multiple
+                chips
+                clearable
+              />
             </VCol>
           </VRow>
         </VForm>
-
       </VCardText>
 
+      <VDivider />
+
+      <VCardText class="d-flex gap-3 pa-6">
+        <VBtn
+          color="primary"
+          :loading="loading"
+          @click="saveUser"
+        >
+          Create User
+        </VBtn>
+        <VBtn color="secondary" variant="tonal" @click="dialogVisibleUpdate(false)">
+          Cancel
+        </VBtn>
+      </VCardText>
+
+      <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
+        {{ snackBar.message }}
+      </VSnackbar>
     </VCard>
   </VDialog>
 </template>
 
-<style lang="scss">
-.refer-link-input {
-  .v-field--appended {
-    padding-inline-end: 0;
-  }
-
-  .v-field__append-inner {
-    padding-block-start: 0.125rem;
-  }
-}
-</style>
