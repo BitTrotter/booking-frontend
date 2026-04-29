@@ -1,27 +1,18 @@
 <template>
     <div>
         <VCard title="Cabins">
-            <VCol md="6" lg="8" cols="12">
-                <VCard>
-
-                </VCard>
-            </VCol>
 
             <VCardText class="d-flex flex-wrap gap-4">
-                <div class="d-flex align-center">
-                
-                </div>
 
-                <VSpacer />
 
                 <div class="d-flex gap-x-4 align-center">
                     <!-- 👉 Export button -->
-                    <VBtn icon="ri-search-line" variant="text" color="success" @click="list" />
-
                     <VBtn color="primary" prepend-icon="ri-add-line"
                         @click="isAddRoleDialogVisible = !isAddRoleDialogVisible">
                         Add Cabin
                     </VBtn>
+                    <VBtn icon="ri-refresh-line" variant="text" color="primary" @click="list" />
+
                 </div>
             </VCardText>
             <VDataTable :headers="headers" :items="data" :items-per-page="5" class="text-no-wrap">

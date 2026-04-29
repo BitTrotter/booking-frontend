@@ -19,7 +19,11 @@ const starDate = ref(null)
 const endDate = ref(null)
 const minNights = ref(null)
 const ruleStatus = ref(true)
-
+const images = ref([])
+const imagesBaseUrl = import.meta.env.VITE_IMAGES_BASE_URL
+const updatingMainImageId = ref(null)
+const deletingImageId = ref(null)
+let cabinImagesPayload = ref([])
 const serviceList = [
   'WiFi',
   'Air Conditioning',
@@ -45,7 +49,73 @@ const props = defineProps({
 })
 
 const dialogVisibleUpdate = val => {
+  if (!val)
+    cabinImagesPayload.value = []
+
   emit('update:isDialogEditVisible', val)
+}
+
+const getImageUrl = image => {
+  if (!image?.url)
+    return ''
+
+  if (image.url.startsWith('http'))
+    return image.url
+
+  return `${imagesBaseUrl || ''}${image.url}`
+}
+
+const setMainImage = async selectedImage => {
+  if (!selectedImage?.id)
+    return
+
+  const previousImages = images.value.map(image => ({ ...image }))
+
+  images.value = images.value.map(image => ({
+    ...image,
+    is_main: image.id === selectedImage.id,
+  }))
+
+  updatingMainImageId.value = selectedImage.id
+
+  try {
+    await $api(`/cabins/${props.cabin.id}/images/${selectedImage.id}/main`, {
+      method: 'PATCH',
+      onResponseError: ({ response }) => {
+        throw new Error(response.statusText || 'Error updating main image')
+      },
+    })
+  } catch (error) {
+    images.value = previousImages
+    console.error('Error updating main image:', error)
+  } finally {
+    updatingMainImageId.value = null
+  }
+}
+
+const deleteExistingImage = async imageToDelete => {
+  if (!imageToDelete?.id)
+    return
+
+  if (!confirm('Are you sure you want to delete this image?'))
+    return
+
+  deletingImageId.value = imageToDelete.id
+
+  try {
+    await $api(`/cabins/${props.cabin.id}/images/${imageToDelete.id}`, {
+      method: 'DELETE',
+      onResponseError: ({ response }) => {
+        throw new Error(response.statusText || 'Error deleting image')
+      },
+    })
+
+    images.value = images.value.filter(image => image.id !== imageToDelete.id)
+  } catch (error) {
+    console.error('Error deleting image:', error)
+  } finally {
+    deletingImageId.value = null
+  }
 }
 
 const submitRulePrice = async () => {
@@ -79,7 +149,27 @@ const submitRulePrice = async () => {
     console.error('Error submitting cabin:', error)
   }
 }
+const submitCabinImages = async () => {
+  const formData = new FormData()
+  cabinImagesPayload.value.forEach((file, index) => {
+    formData.append(`images[${index}]`, file)
+  })
 
+  try {
+    const resp = await $api(`/cabins/${props.cabin.id}/images`, {
+      method: 'POST',
+      body: formData,
+      onResponseError: ({ response }) => {
+        console.error('Error uploading images:', response.statusText)
+        throw new Error(response.statusText || 'Error uploading images')
+      },
+    })
+
+    console.log('Images uploaded successfully:', resp)
+  } catch (error) {
+    console.error('Error uploading images:', error)
+  }
+}
 const submitCabin = async () => {
   const validation = await refCabinForm.value?.validate()
 
@@ -97,7 +187,9 @@ const submitCabin = async () => {
     status: status.value,
   }
 
-  console.log('Submitting cabin:', payload)
+  if (cabinImagesPayload.value.length > 0) {
+    submitCabinImages()
+  }
 
   try {
     const resp = await $api(`/cabins/${props.cabin.id}`, {
@@ -125,6 +217,8 @@ const loadCabinDetails = async () => {
     },
   })
 
+
+
   name.value = dataCabint.name
   description.value = dataCabint.description
   price_per_night.value = dataCabint.price_per_night
@@ -133,8 +227,10 @@ const loadCabinDetails = async () => {
   bathrooms.value = dataCabint.bathrooms
   services.value = dataCabint.services
   status.value = dataCabint.status
+  images.value = dataCabint.images || []
 
-  console.log('Cabin details:', dataCabint)
+
+
 }
 const deleteItem = async (cabin) => {
   if (!confirm('Are you sure you want to delete this cabin?'))
@@ -162,6 +258,8 @@ onMounted(() => {
   watch(() => props.isDialogEditVisible, val => {
     if (val)
       loadCabinDetails()
+    else
+      cabinImagesPayload.value = []
   })
 })
 </script>
@@ -281,8 +379,44 @@ onMounted(() => {
           <VCol cols="12">
             <div class="text-h6 mb-4">Images</div>
           </VCol>
+
           <VCol cols="12">
-            <VFileInput multiple label="File input" density="compact" />
+            <div class="text-subtitle-1 font-weight-medium mb-4">Existing Images</div>
+
+            <VRow v-if="images.length">
+              <VCol v-for="(image, index) in images" :key="image.id || index" cols="12" sm="6" lg="4">
+                <VCard variant="outlined" class="h-100 overflow-hidden">
+                  <VImg :src="getImageUrl(image)" height="240" cover class="bg-grey-lighten-3">
+                    <div class="d-flex justify-space-between align-start pa-3">
+                      <VChip v-if="image.is_main" color="primary" size="small" label>
+                        Main image
+                      </VChip>
+                    </div>
+                  </VImg>
+
+                  <VCardText class="pa-4">
+                    <div class="d-flex justify-space-between align-center gap-4 flex-wrap">
+                      <VCheckbox :model-value="!!image.is_main"
+                        :label="image.is_main ? 'Main image' : 'Set as main image'" color="primary" hide-details
+                        :disabled="updatingMainImageId === image.id"
+                        @update:model-value="value => value && setMainImage(image)" />
+
+                      <VBtn color="error" variant="tonal" :loading="deletingImageId === image.id"
+                        @click="deleteExistingImage(image)">
+                        Delete
+                      </VBtn>
+                    </div>
+                  </VCardText>
+                </VCard>
+              </VCol>
+            </VRow>
+
+            <VAlert v-else type="info" variant="tonal" text="This cabin does not have images yet." />
+          </VCol>
+
+          <VCol cols="12">
+            <VFileInput v-model="cabinImagesPayload" multiple label="Upload new images" density="comfortable"
+              prepend-icon="ri-image-add-line" />
           </VCol>
         </VRow>
       </VCardText>
