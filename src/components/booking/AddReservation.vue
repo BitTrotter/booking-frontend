@@ -70,8 +70,8 @@ onMounted(async () => {
 
             <VCombobox v-model="selectedItem" :items="items" item-title="name" item-value="id"
                 placeholder="Select Cabin" class="mb-4" />
-            <AppDateTimePicker class="mb-4" v-model="startDate" label="Start date" placeholder="Start date"/>
-            <AppDateTimePicker class="mb-4" v-model="endDate" label="End date" placeholder="End date"/>
+            <AppDateTimePicker class="mb-4" v-model="startDate" label="Start date" placeholder="Start date" />
+            <AppDateTimePicker class="mb-4" v-model="endDate" label="End date" placeholder="End date" />
 
             <VBtn color="primary" class="mt-4" @click="submitReservation">Submit Reservation</VBtn>
 

@@ -13,44 +13,21 @@
         <VSpacer />
 
         <div class="d-flex gap-x-4 align-center">
-          <!-- 👉 Export button -->
-          <VBtn variant="outlined" color="secondary" prepend-icon="ri-upload-2-line">
-
-          </VBtn>
 
           <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddRoleDialogVisible = !isAddRoleDialogVisible">
-            Add Rol
+            Add User
           </VBtn>
         </div>
       </VCardText>
       <VDataTable :headers="headers" :items="data" :items-per-page="5" class="text-no-wrap">
-         <template #item.edit="{ item }">
-                    <VBtn variant="outlined" @click="openEdit(item)">
-                        Edit
-                    </VBtn>
-                </template>
-        <template #item.id="{ item }">
-          <span class="text-h6">{{ item.id }}</span>
-
-        </template>
-        <template #item.permissions="{ item }">
-          <!-- <VChip label v-for="(itm, index) in item.permissions" :key="index" class="mr-1">
-            {{ itm }}
-          </VChip> -->
-          <VCombobox v-model="selectedItem" :items="item.permissions" placeholder="permissions" class="my-1" />
-        </template>
-        <template #item.actions="{ item }">
-          <div class="d-flex gap-1">
-            <IconBtn size="small" @click="editItem(item)">
-              <VIcon icon="ri-pencil-line" />
-            </IconBtn>
-            <IconBtn size="small" @click="deleteItem(item)">
-              <VIcon icon="ri-delete-bin-line" />
-            </IconBtn>
-          </div>
+        <template #item.edit="{ item }">
+          <VBtn variant="outlined" @click="openEdit(item)">
+            Edit
+          </VBtn>
         </template>
       </VDataTable>
       <AddUsers v-model:isDialogVisible="isAddRoleDialogVisible" />
+      <EditUsers v-model:isDialogVisible="isEditDialogVisible" :user="selectedUser" @user-updated="list" />
 
     </VCard>
   </div>
@@ -60,14 +37,14 @@
 <script setup>
 // import data from '@/views/js/datatable'
 import AddUsers from '@/components/booking/role/AddUsers.vue';
+import EditUsers from '@/components/booking/role/EditUsers.vue';
 import { onMounted } from 'vue';
 
 const headers = [
   { title: 'Edit', key: 'edit' },
-  { title: 'Role', key: 'name' },
-  { title: 'EMAIL', key: 'email' },
-  { title: 'DATE', key: 'created_at' },
-  { title: 'Roles', key: 'Roles' },
+  { title: 'Name', key: 'name' },
+  { title: 'Email', key: 'email' },
+  { title: 'Role', key: 'rol' },
 ]
 
 const searchQuery = ref('')
@@ -75,6 +52,9 @@ const isAddRoleDialogVisible = ref(false)
 console.log(PERMISOS);
 const data = ref([])
 let warningError = ref('')
+
+const selectedUser = ref(null);
+const isEditDialogVisible = ref(false);
 
 const list = async () => {
   const resp = await $api('/users?search=' + (searchQuery.value ? searchQuery.value : ''), {
@@ -84,9 +64,9 @@ const list = async () => {
       throw new Error(response.statusText || 'Login failed')
     }
   })
+  console.log(resp);
   data.value = resp.users;
-  console.log("data");
-  console.log(data.value);
+
 }
 
 
@@ -97,8 +77,15 @@ const deleteItem = (item) => {
   console.log('Delete item', item);
 }
 
+const openEdit = (user) => {
+  selectedUser.value = user;
+  isEditDialogVisible.value = true;
+}
+
 
 onMounted(() => {
   list()
 })
+
+
 </script>

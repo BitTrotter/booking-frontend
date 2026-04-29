@@ -31,10 +31,6 @@ export default [
     to: { name: 'calendar' },
     icon: { icon: 'ri-calendar-line' },
   },
-    {
-    title: 'Payments',
-    to: { name: 'users' },
-    icon: { icon: 'ri-coins-line' },
-  },
+
  
 ]
