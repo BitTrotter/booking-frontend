@@ -1,5 +1,6 @@
 <script setup>
-import navItems from '@/navigation/vertical'
+import navItemsRaw from '@/navigation/vertical'
+import { getUserPermissions } from '@/utils/permissions'
 import { useConfigStore } from '@core/stores/config'
 import { themeConfig } from '@themeConfig'
 
@@ -28,6 +29,31 @@ watch([
 
 // !SECTION
 const configStore = useConfigStore()
+
+const navItems = computed(() => {
+  const perms = getUserPermissions()
+  const result = []
+
+  for (let i = 0; i < navItemsRaw.length; i++) {
+    const item = navItemsRaw[i]
+
+    if (item.heading) {
+      // Only include the heading if at least one item in its group passes the permission check
+      const groupItems = []
+      for (let j = i + 1; j < navItemsRaw.length; j++) {
+        if (navItemsRaw[j].heading) break
+        groupItems.push(navItemsRaw[j])
+      }
+      const anyVisible = groupItems.some(ni => !ni.permission || perms.includes(ni.permission))
+      if (anyVisible) result.push(item)
+    } else {
+      if (!item.permission || perms.includes(item.permission))
+        result.push(item)
+    }
+  }
+
+  return result
+})
 
 // ℹ️ Provide animation name for vertical nav collapse icon.
 const verticalNavHeaderActionAnimationName = ref(null)

@@ -44,6 +44,7 @@ declare module 'vue' {
     DialogCloseBtn: typeof import('./src/@core/components/DialogCloseBtn.vue')['default']
     EditCabin: typeof import('./src/components/cabins/EditCabin.vue')['default']
     EditReservation: typeof import('./src/components/booking/EditReservation.vue')['default']
+    EditRoleDialog: typeof import('./src/components/booking/role/EditRoleDialog.vue')['default']
     EditUsers: typeof import('./src/components/booking/role/EditUsers.vue')['default']
     EnableOneTimePasswordDialog: typeof import('./src/components/dialogs/EnableOneTimePasswordDialog.vue')['default']
     ErrorHeader: typeof import('./src/components/ErrorHeader.vue')['default']

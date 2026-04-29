@@ -358,6 +358,9 @@
     "getUserData": true,
     "handleUnauthorized": true,
     "isAuthenticated": true,
-    "redirectToLogin": true
+    "redirectToLogin": true,
+    "ROUTE_PERMISSIONS": true,
+    "getUserPermissions": true,
+    "hasPermission": true
   }
 }

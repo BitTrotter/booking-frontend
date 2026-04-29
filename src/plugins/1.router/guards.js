@@ -1,4 +1,5 @@
 import { clearAuthSession, getAccessToken, getUserData } from '@/utils/auth'
+import { ROUTE_PERMISSIONS, getUserPermissions } from '@/utils/permissions'
 
 function parseJwt(token) {
   try {
@@ -52,6 +53,14 @@ export const setupGuards = router => {
           to: to.fullPath !== '/' ? to.path : undefined,
         },
       }
+    }
+
+    // Permission check: block direct URL access to restricted routes
+    const requiredPermission = ROUTE_PERMISSIONS[to.name]
+    if (requiredPermission && isLoggedIn) {
+      const userPermissions = getUserPermissions()
+      if (!userPermissions.includes(requiredPermission))
+        return { name: 'not-authorized' }
     }
   })
 }

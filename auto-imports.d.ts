@@ -10,6 +10,7 @@ declare global {
   const COOKIE_MAX_AGE_1_YEAR: typeof import('./src/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']
   const EffectScope: typeof import('vue')['EffectScope']
   const PERMISOS: typeof import('./src/utils/constants.js')['PERMISOS']
+  const ROUTE_PERMISSIONS: typeof import('./src/utils/permissions.js')['ROUTE_PERMISSIONS']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const alphaDashValidator: typeof import('./src/@core/utils/validators.js')['alphaDashValidator']
   const alphaValidator: typeof import('./src/@core/utils/validators.js')['alphaValidator']
@@ -57,8 +58,10 @@ declare global {
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const getUserData: typeof import('./src/utils/auth.js')['getUserData']
+  const getUserPermissions: typeof import('./src/utils/permissions.js')['getUserPermissions']
   const h: typeof import('vue')['h']
   const handleUnauthorized: typeof import('./src/utils/auth.js')['handleUnauthorized']
+  const hasPermission: typeof import('./src/utils/permissions.js')['hasPermission']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
@@ -370,6 +373,7 @@ declare module 'vue' {
     readonly COOKIE_MAX_AGE_1_YEAR: UnwrapRef<typeof import('./src/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly PERMISOS: UnwrapRef<typeof import('./src/utils/constants.js')['PERMISOS']>
+    readonly ROUTE_PERMISSIONS: UnwrapRef<typeof import('./src/utils/permissions.js')['ROUTE_PERMISSIONS']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly alphaDashValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaDashValidator']>
     readonly alphaValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaValidator']>
@@ -417,8 +421,10 @@ declare module 'vue' {
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getUserData: UnwrapRef<typeof import('./src/utils/auth.js')['getUserData']>
+    readonly getUserPermissions: UnwrapRef<typeof import('./src/utils/permissions.js')['getUserPermissions']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly handleUnauthorized: UnwrapRef<typeof import('./src/utils/auth.js')['handleUnauthorized']>
+    readonly hasPermission: UnwrapRef<typeof import('./src/utils/permissions.js')['hasPermission']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
@@ -723,6 +729,7 @@ declare module '@vue/runtime-core' {
     readonly COOKIE_MAX_AGE_1_YEAR: UnwrapRef<typeof import('./src/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly PERMISOS: UnwrapRef<typeof import('./src/utils/constants.js')['PERMISOS']>
+    readonly ROUTE_PERMISSIONS: UnwrapRef<typeof import('./src/utils/permissions.js')['ROUTE_PERMISSIONS']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly alphaDashValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaDashValidator']>
     readonly alphaValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaValidator']>
@@ -770,8 +777,10 @@ declare module '@vue/runtime-core' {
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getUserData: UnwrapRef<typeof import('./src/utils/auth.js')['getUserData']>
+    readonly getUserPermissions: UnwrapRef<typeof import('./src/utils/permissions.js')['getUserPermissions']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly handleUnauthorized: UnwrapRef<typeof import('./src/utils/auth.js')['handleUnauthorized']>
+    readonly hasPermission: UnwrapRef<typeof import('./src/utils/permissions.js')['hasPermission']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>

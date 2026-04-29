@@ -6,6 +6,10 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    role: {
+        type: Object,
+        default: null,
+    },
 })
 
 const emit = defineEmits(['update:isDialogVisible', 'saved'])
@@ -19,19 +23,31 @@ const nameError = ref('')
 const list_permission = PERMISOS
 const totalPermissions = computed(() => PERMISOS.reduce((acc, m) => acc + m.permisos.length, 0))
 
-const togglePermission = (permiso) => {
+// Populate form whenever the dialog opens with a role
+watch(() => props.isDialogVisible, visible => {
+    if (visible && props.role) {
+        role_name.value = props.role.name ?? ''
+        permissions.value = Array.isArray(props.role.permissions)
+            ? [...props.role.permissions]
+            : []
+        warnError.value = ''
+        nameError.value = ''
+    }
+})
+
+const togglePermission = permiso => {
     const idx = permissions.value.indexOf(permiso)
     if (idx === -1) permissions.value.push(permiso)
     else permissions.value.splice(idx, 1)
 }
 
-const isModuleAllSelected = (module) =>
+const isModuleAllSelected = module =>
     module.permisos.every(p => permissions.value.includes(p.permiso))
 
-const isModulePartialSelected = (module) =>
+const isModulePartialSelected = module =>
     module.permisos.some(p => permissions.value.includes(p.permiso)) && !isModuleAllSelected(module)
 
-const toggleModule = (module) => {
+const toggleModule = module => {
     if (isModuleAllSelected(module)) {
         permissions.value = permissions.value.filter(p => !module.permisos.map(x => x.permiso).includes(p))
     } else {
@@ -67,15 +83,7 @@ const validate = () => {
     return true
 }
 
-const resetForm = () => {
-    role_name.value = ''
-    permissions.value = []
-    warnError.value = ''
-    nameError.value = ''
-}
-
 const close = () => {
-    resetForm()
     emit('update:isDialogVisible', false)
 }
 
@@ -84,17 +92,17 @@ const saveRole = async () => {
 
     isLoading.value = true
     try {
-        await $api('/role', {
-            method: 'POST',
+        await $api(`/role/${props.role.id}`, {
+            method: 'PUT',
             body: { name: role_name.value.trim(), permissions: permissions.value },
             onResponseError: ({ response }) => {
-                throw new Error(response._data?.message || response.statusText || 'Failed to save role')
-            }
+                throw new Error(response._data?.message || response.statusText || 'Failed to update role')
+            },
         })
         emit('saved')
         close()
     } catch (error) {
-        warnError.value = error.message || 'Error saving role.'
+        warnError.value = error.message || 'Error updating role.'
     } finally {
         isLoading.value = false
     }
@@ -112,13 +120,14 @@ const saveRole = async () => {
             <!-- Header -->
             <VCardItem class="py-4 px-6">
                 <VCardTitle class="d-flex align-center gap-3 pa-0">
-                    <VAvatar color="primary" variant="tonal" size="38" rounded="lg">
-                        <VIcon icon="tabler-shield-lock" size="22" />
+                    <VAvatar color="warning" variant="tonal" size="38" rounded="lg">
+                        <VIcon icon="tabler-shield-cog" size="22" />
                     </VAvatar>
                     <div>
-                        <p class="text-h6 font-weight-bold mb-0">Add New Role</p>
+                        <p class="text-h6 font-weight-bold mb-0">Edit Role</p>
                         <p class="text-caption text-medium-emphasis mb-0">
-                            Define a role and assign its permissions
+                            Update name and permissions for
+                            <span class="font-weight-medium text-high-emphasis">{{ props.role?.name }}</span>
                         </p>
                     </div>
                 </VCardTitle>
@@ -151,7 +160,7 @@ const saveRole = async () => {
                             Permissions
                         </span>
                         <VChip
-                            :color="permissions.length > 0 ? 'primary' : 'default'"
+                            :color="permissions.length > 0 ? 'warning' : 'default'"
                             size="x-small"
                             label
                         >
@@ -159,7 +168,7 @@ const saveRole = async () => {
                         </VChip>
                     </div>
                     <div class="d-flex gap-2">
-                        <VBtn variant="tonal" size="x-small" color="primary" @click="selectAll">
+                        <VBtn variant="tonal" size="x-small" color="warning" @click="selectAll">
                             Select All
                         </VBtn>
                         <VBtn variant="tonal" size="x-small" color="secondary" @click="clearAll">
@@ -198,7 +207,7 @@ const saveRole = async () => {
                                         :indeterminate="isModulePartialSelected(module)"
                                         hide-details
                                         density="compact"
-                                        color="primary"
+                                        color="warning"
                                         @click.prevent="toggleModule(module)"
                                     />
                                     <span class="text-body-2 font-weight-medium">{{ module.name }}</span>
@@ -209,7 +218,7 @@ const saveRole = async () => {
                                     <VChip
                                         v-for="permiso in module.permisos"
                                         :key="permiso.permiso"
-                                        :color="permissions.includes(permiso.permiso) ? 'primary' : 'default'"
+                                        :color="permissions.includes(permiso.permiso) ? 'warning' : 'default'"
                                         :variant="permissions.includes(permiso.permiso) ? 'tonal' : 'outlined'"
                                         size="small"
                                         label
@@ -240,12 +249,12 @@ const saveRole = async () => {
                 </VBtn>
                 <VBtn
                     variant="elevated"
-                    color="primary"
+                    color="warning"
                     :loading="isLoading"
                     prepend-icon="tabler-device-floppy"
                     @click="saveRole"
                 >
-                    Save Role
+                    Save Changes
                 </VBtn>
             </VCardActions>
         </VCard>

@@ -5,7 +5,7 @@
         <div class="d-flex flex-wrap justify-space-between align-center gap-4">
           <div>
             <div class="text-h4 font-weight-bold">Roles</div>
-            <div class="text-body-2 text-medium-emphasis">
+            <div class="text-body-2 text-medium-emphasis pb-4">
               Create and manage roles with specific permissions for your system.
             </div>
           </div>
@@ -26,7 +26,7 @@
       <VCardText class="pt-0">
         <VRow class="mb-4">
           <VCol cols="12">
-            <VCard variant="tonal" color="primary">
+            <VCard variant="tonal" color="primary" class="mt-4">
               <VCardText>
                 <div class="text-caption text-medium-emphasis">Total roles</div>
                 <div class="text-h4 font-weight-bold mt-1">{{ data.length }}</div>
@@ -43,7 +43,7 @@
             </template>
 
             <template #item.permissions="{ item }">
-              <div class="d-flex flex-wrap gap-2">
+              <div class="d-flex flex-wrap gap-2 py-4">
                 <VChip v-for="(perm, index) in item.permissions || []" :key="`${item.id}-${perm}-${index}`" size="small"
                   variant="tonal">
                   {{ perm }}
@@ -71,7 +71,8 @@
       </VCardText>
     </VCard>
 
-    <AddRolaDialog v-model:isDialogVisible="isAddRoleDialogVisible" />
+    <AddRolaDialog v-model:isDialogVisible="isAddRoleDialogVisible" @saved="list" />
+    <EditRoleDialog v-model:isDialogVisible="isEditRoleDialogVisible" :role="selectedRole" @saved="list" />
 
     <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
       {{ snackBar.message }}
@@ -81,7 +82,7 @@
 
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const headers = [
   { title: 'Role', key: 'name' },
@@ -92,6 +93,8 @@ const headers = [
 
 const searchQuery = ref('')
 const isAddRoleDialogVisible = ref(false)
+const isEditRoleDialogVisible = ref(false)
+const selectedRole = ref(null)
 const loading = ref(false)
 const data = ref([])
 const snackBar = ref({
@@ -130,7 +133,8 @@ const list = async () => {
 }
 
 const editItem = item => {
-  console.log('Edit item', item)
+  selectedRole.value = item
+  isEditRoleDialogVisible.value = true
 }
 
 const deleteItem = async item => {
@@ -155,8 +159,4 @@ onMounted(() => {
   list()
 })
 
-watch(isAddRoleDialogVisible, visible => {
-  if (!visible)
-    list()
-})
 </script>

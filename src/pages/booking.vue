@@ -82,6 +82,10 @@
               </VChip>
             </template>
 
+            <template #item.created_at="{ item }">
+              {{ formatDate(item.created_at) }}
+            </template>
+
             <template #item.actions="{ item }">
               <div class="d-flex justify-end">
                 <VBtn variant="text" color="primary" prepend-icon="ri-pencil-line" @click="openEdit(item)">
@@ -107,7 +111,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 
 const headers = [
   { title: 'Reservation', key: 'id' },
-  { title: 'Reservation Date', key: 'created_at', format: value => new Date(value).toLocaleDateString() },
+  { title: 'Reservation Date', key: 'created_at' },
   { title: 'Cabin', key: 'cabin' },
   { title: 'Start Date', key: 'start' },
   { title: 'End Date', key: 'end' },
@@ -125,13 +129,14 @@ const loading = ref(false)
 const confirmedReservations = computed(() => data.value.filter(item => item.status === 'confirmed').length)
 const pendingReservations = computed(() => data.value.filter(item => item.status === 'pending').length)
 
-const formatDate = dateValue => {
-  if (!dateValue)
-    return 'No date'
 
-  return new Date(dateValue).toLocaleDateString()
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
-
 const formatCurrency = amount => {
   const parsedAmount = Number(amount || 0)
 
@@ -183,4 +188,6 @@ watch(isEditReservationDialogVisible, visible => {
   if (!visible)
     list()
 })
+
+
 </script>

@@ -5,7 +5,7 @@
         <div class="d-flex flex-wrap justify-space-between align-center gap-4">
           <div>
             <div class="text-h4 font-weight-bold">Users</div>
-            <div class="text-body-2 text-medium-emphasis">
+            <div class="text-body-2 text-medium-emphasis pb-4">
               Manage users, assign roles, and control access permissions.
             </div>
           </div>
@@ -24,7 +24,7 @@
 
     <VCard>
       <VCardText class="pt-0">
-        <VRow class="mb-4">
+        <VRow class="mb-4 pt-6">
           <VCol cols="12" sm="4">
             <VCard variant="tonal" color="primary">
               <VCardText>
