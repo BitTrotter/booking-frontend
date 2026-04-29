@@ -1,8 +1,9 @@
 <script setup>
 import { ref } from 'vue'
+import { requiredValidator } from '@/@core/utils/validators'
 
 const emit = defineEmits(['update:isDialogVisible'])
-const tab = ref('personal-info')
+const refForm = ref()
 const name = ref('')
 const description = ref('')
 const price_per_night = ref(null)
@@ -34,6 +35,11 @@ const dialogVisibleUpdate = val => {
 }
 
 const submitCabin = async () => {
+  const validation = await refForm.value?.validate()
+
+  if (!validation?.valid)
+    return
+
   const payload = {
     name: name.value,
     description: description.value,
@@ -77,23 +83,22 @@ const resetForm = () => {
 <template>
     <VDialog :model-value="props.isDialogVisible" max-width="750" @update:model-value="dialogVisibleUpdate">
        <VCard flat class="pa-4">
-  <VTabs v-model="tab">
-    <VTab value="info-general">General Information</VTab>
-    <VTab value="detalles">Details</VTab>
-    <VTab value="extras">Extras</VTab>
-  </VTabs>
-
   <VCardText>
-    <VWindow v-model="tab" class="disable-tab-transition">
-      <!-- TAB 1: General Information -->
-      <VWindowItem value="info-general">
-        <VForm class="mt-2">
+    <VForm ref="refForm" class="mt-2">
+      <VRow>
+        <VCol cols="12">
+          <div class="text-h6 mb-4">General Information</div>
+        </VCol>
+      </VRow>
+
           <VRow>
             <VCol cols="12" md="6">
               <VTextField
                 v-model="name"
                 label="Cabin Name"
                 placeholder="Las Palmas Cabin"
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
             <VCol cols="12" md="6">
@@ -102,6 +107,8 @@ const resetForm = () => {
                 :items="['available', 'maintenance', 'unavailable']"
                 label="Status"
                 placeholder="Select status"
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
             <VCol cols="12">
@@ -109,15 +116,18 @@ const resetForm = () => {
                 v-model="description"
                 label="Description"
                 placeholder="Brief description of the cabin..."
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
           </VRow>
-        </VForm>
-      </VWindowItem>
 
-      <!-- TAB 2: Details -->
-      <VWindowItem value="detalles">
-        <VForm class="mt-2">
+      <VRow class="mt-2">
+        <VCol cols="12">
+          <div class="text-h6 mb-4">Details</div>
+        </VCol>
+      </VRow>
+
           <VRow>
             <VCol cols="12" md="6">
               <VTextField
@@ -125,6 +135,8 @@ const resetForm = () => {
                 type="number"
                 label="Price per Night"
                 placeholder="1500"
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
             <VCol cols="12" md="6">
@@ -133,6 +145,8 @@ const resetForm = () => {
                 type="number"
                 label="Guest Capacity"
                 placeholder="4"
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
             <VCol cols="12" md="6">
@@ -141,6 +155,8 @@ const resetForm = () => {
                 type="number"
                 label="Number of Beds"
                 placeholder="2"
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
             <VCol cols="12" md="6">
@@ -149,15 +165,18 @@ const resetForm = () => {
                 type="number"
                 label="Number of Bathrooms"
                 placeholder="1"
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
           </VRow>
-        </VForm>
-      </VWindowItem>
 
-      <!-- TAB 3: Extras / Amenities -->
-      <VWindowItem value="extras">
-        <VForm class="mt-2">
+      <VRow class="mt-2">
+        <VCol cols="12">
+          <div class="text-h6 mb-4">Extras</div>
+        </VCol>
+      </VRow>
+
           <VRow>
             <VCol cols="12" md="12">
               <VSelect
@@ -168,12 +187,12 @@ const resetForm = () => {
                 clearable
                 label="Amenities"
                 placeholder="Select amenities"
+                :rules="[requiredValidator]"
+                required
               />
             </VCol>
           </VRow>
-        </VForm>
-      </VWindowItem>
-    </VWindow>
+    </VForm>
   </VCardText>
 
   <VDivider />
