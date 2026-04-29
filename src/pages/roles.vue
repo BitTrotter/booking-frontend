@@ -4,20 +4,7 @@
 
 
       <VCardText class="d-flex flex-wrap gap-4">
-        <div class="d-flex align-center">
-          <!-- 👉 Search  -->
-          <VTextField v-model="searchQuery" placeholder="Search Role" style="inline-size: 200px;" density="compact"
-            class="me-3" @keyup="list" />
-        </div>
-
-        <VSpacer />
-
         <div class="d-flex gap-x-4 align-center">
-          <!-- 👉 Export button -->
-          <VBtn variant="outlined" color="secondary" prepend-icon="ri-upload-2-line">
-
-          </VBtn>
-
           <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddRoleDialogVisible = !isAddRoleDialogVisible">
             Add Rol
           </VBtn>
@@ -54,7 +41,7 @@
 
 <script setup>
 // import data from '@/views/js/datatable'
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 
 const headers = [
   { title: 'ID', key: 'id' },
@@ -86,12 +73,24 @@ const list = async () => {
 const editItem = (item) => {
   console.log('Edit item', item);
 }
-const deleteItem = (item) => {
-  console.log('Delete item', item);
+const deleteItem = async (item) => {
+  const resp = await $api('/role/' + item.id, {
+    method: 'DELETE',
+    onResponseError: ({ response }) => {
+      warnError.value = response.statusText
+      throw new Error(response.statusText || 'Login failed')
+    }
+  })
+  list()
 }
 
 
 onMounted(() => {
   list()
+})
+
+watch(isAddRoleDialogVisible, visible => {
+  if (!visible)
+    list()
 })
 </script>

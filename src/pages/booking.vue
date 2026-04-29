@@ -50,7 +50,7 @@
 <script setup>
 // import data from '@/views/js/datatable'
 import AddCabin from '@/components/cabins/AddCabin.vue';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 const headers = [
     { title: 'ID', key: 'id' },
     { title: 'Start Date', key: 'start' },
@@ -93,5 +93,15 @@ const openEdit = (item) => {
 }
 onMounted(() => {
     list()
+})
+
+watch(isAddRoleDialogVisible, visible => {
+    if (!visible)
+        list()
+})
+
+watch(isEditRoleDialogVisible, visible => {
+    if (!visible)
+        list()
 })
 </script>

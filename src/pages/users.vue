@@ -4,13 +4,7 @@
 
 
       <VCardText class="d-flex flex-wrap gap-4">
-        <div class="d-flex align-center">
-          <!-- 👉 Search  -->
-          <VTextField v-model="searchQuery" placeholder="Search Role" style="inline-size: 200px;" density="compact"
-            class="me-3" @keyup="list" />
-        </div>
 
-        <VSpacer />
 
         <div class="d-flex gap-x-4 align-center">
 

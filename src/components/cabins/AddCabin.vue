@@ -180,7 +180,7 @@ const resetForm = () => {
 
   <VCardText class="d-flex gap-4">
     <VBtn @click="submitCabin">Save</VBtn>
-    <VBtn color="secondary" variant="tonal"  @click=" emit('update:isDialogtVisible', false)">Cancel</VBtn>
+    <VBtn color="secondary" variant="tonal"  @click="emit('update:isDialogVisible', false)">Cancel</VBtn>
   </VCardText>
 </VCard>
     </VDialog>
