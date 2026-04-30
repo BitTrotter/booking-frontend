@@ -38,58 +38,10 @@ const recentReservations = computed(() =>
     .slice(0, 6),
 )
 
-// ── Monthly bar chart data (last 6 months) ──────────────────────────────────
-
-const monthlyData = computed(() => {
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date()
-
-    d.setDate(1)
-    d.setMonth(d.getMonth() - (5 - i))
-
-    return { label: d.toLocaleString('default', { month: 'short' }), count: 0 }
-  })
-
-  reservations.value.forEach(r => {
-    const date = new Date(r.created_at)
-    const now = new Date()
-    const diffMonths = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth())
-
-    if (diffMonths >= 0 && diffMonths < 6)
-      months[5 - diffMonths].count++
-  })
-
-  return months
-})
-
 // ── ApexCharts configs ──────────────────────────────────────────────────────
 
 const isDark = computed(() => vuetifyTheme.current.value.dark)
 const textColor = computed(() => isDark.value ? '#E7E3FC99' : '#3A355199')
-const gridColor = computed(() => isDark.value ? 'rgba(231,227,252,0.08)' : 'rgba(58,53,81,0.08)')
-
-const barChartOptions = computed(() => ({
-  chart: { type: 'bar', toolbar: { show: false }, parentHeightOffset: 0 },
-  colors: ['#7367F0'],
-  plotOptions: { bar: { borderRadius: 6, columnWidth: '45%', distributed: false } },
-  dataLabels: { enabled: false },
-  grid: { borderColor: gridColor.value, strokeDashArray: 4, yaxis: { lines: { show: true } } },
-  xaxis: {
-    categories: monthlyData.value.map(m => m.label),
-    axisBorder: { show: false },
-    axisTicks: { show: false },
-    labels: { style: { colors: textColor.value, fontSize: '13px' } },
-  },
-  yaxis: {
-    labels: {
-      style: { colors: textColor.value, fontSize: '13px' },
-      formatter: val => Math.round(val),
-    },
-  },
-  tooltip: { theme: isDark.value ? 'dark' : 'light' },
-}))
-
-const barChartSeries = computed(() => [{ name: 'Reservations', data: monthlyData.value.map(m => m.count) }])
 
 const donutOptions = computed(() => ({
   chart: { type: 'donut', parentHeightOffset: 0 },
@@ -141,6 +93,45 @@ const formatDate = v => v ? new Date(v).toLocaleDateString('en-US', { month: 'sh
 const getStatusColor = status => ({ confirmed: 'success', pending: 'warning', cancelled: 'error', completed: 'info' }[status] || 'secondary')
 const getCabinStatusColor = status => ({ available: 'success', maintenance: 'warning', unavailable: 'error' }[status] || 'secondary')
 
+// ── Availability checker ─────────────────────────────────────────────────────
+
+const avail = reactive({
+  cabinId: null,
+  startDate: '',
+  endDate: '',
+  isLoading: false,
+  result: null,
+  error: '',
+})
+
+const selectedCabinForAvail = computed(() =>
+  cabins.value.find(c => c.id === avail.cabinId) || null,
+)
+
+const checkAvailability = async () => {
+  avail.isLoading = true
+  avail.result = null
+  avail.error = ''
+  try {
+    const resp = await $api(
+      `/reservations/availability?cabin_id=${avail.cabinId}&start_date=${avail.startDate}&end_date=${avail.endDate}`,
+    )
+    avail.result = resp
+  } catch (e) {
+    avail.error = e.message || 'Failed to check availability.'
+  } finally {
+    avail.isLoading = false
+  }
+}
+
+const resetAvailability = () => {
+  avail.cabinId = null
+  avail.startDate = ''
+  avail.endDate = ''
+  avail.result = null
+  avail.error = ''
+}
+
 // ── Fetch ────────────────────────────────────────────────────────────────────
 
 const fetchAll = async () => {
@@ -175,13 +166,7 @@ onMounted(fetchAll)
           Overview of reservations, cabins, revenue, and activity.
         </p>
       </div>
-      <VBtn
-        variant="tonal"
-        color="primary"
-        prepend-icon="tabler-refresh"
-        :loading="isLoading"
-        @click="fetchAll"
-      >
+      <VBtn variant="tonal" color="primary" prepend-icon="tabler-refresh" :loading="isLoading" @click="fetchAll">
         Refresh
       </VBtn>
     </div>
@@ -205,7 +190,7 @@ onMounted(fetchAll)
                 </p>
               </div>
               <VAvatar color="success" variant="tonal" size="54" rounded="lg">
-                <VIcon icon="tabler-currency-dollar" size="30" />
+                <VIcon icon="ri-money-dollar-box-line" size="30" />
               </VAvatar>
             </div>
           </VCardText>
@@ -231,7 +216,7 @@ onMounted(fetchAll)
                 </p>
               </div>
               <VAvatar color="primary" variant="tonal" size="54" rounded="lg">
-                <VIcon icon="tabler-calendar-check" size="30" />
+                <VIcon icon="ri-calendar-check-line" size="30" />
               </VAvatar>
             </div>
           </VCardText>
@@ -257,7 +242,7 @@ onMounted(fetchAll)
                 </p>
               </div>
               <VAvatar color="warning" variant="tonal" size="54" rounded="lg">
-                <VIcon icon="tabler-home" size="30" />
+                <VIcon icon="ri-home-line" size="30" />
               </VAvatar>
             </div>
           </VCardText>
@@ -281,7 +266,7 @@ onMounted(fetchAll)
                 </p>
               </div>
               <VAvatar color="info" variant="tonal" size="54" rounded="lg">
-                <VIcon icon="tabler-users" size="30" />
+                <VIcon icon="ri-user-line" size="30" />
               </VAvatar>
             </div>
           </VCardText>
@@ -289,22 +274,102 @@ onMounted(fetchAll)
       </VCol>
     </VRow>
 
-    <!-- ── Charts ────────────────────────────────────────── -->
+    <!-- ── Charts + Availability ────────────────────────── -->
     <VRow class="mb-6">
-      <!-- Monthly bar chart -->
+      <!-- Availability Checker -->
       <VCol cols="12" md="8">
         <VCard height="100%">
-          <VCardItem class="pb-0">
-            <VCardTitle class="text-body-1 font-weight-semibold">Monthly Reservations</VCardTitle>
-            <VCardSubtitle>Last 6 months</VCardSubtitle>
+          <VCardItem class="pb-2">
+            <VCardTitle class="d-flex align-center gap-2 text-body-1 font-weight-semibold">
+              <VIcon icon="tabler-calendar-search" color="primary" size="20" />
+              Check Cabin Availability
+            </VCardTitle>
+            <VCardSubtitle>Verify if a cabin is free for your desired dates</VCardSubtitle>
           </VCardItem>
-          <VCardText class="pt-2">
-            <VueApexCharts
-              type="bar"
-              height="260"
-              :options="barChartOptions"
-              :series="barChartSeries"
-            />
+
+          <VDivider />
+
+          <VCardText>
+            <VRow align="end" class="mt-1">
+              <VCol cols="12" sm="6">
+                <VSelect v-model="avail.cabinId" :items="cabins" item-title="name" item-value="id" label="Select Cabin"
+                  prepend-inner-icon="tabler-home" variant="outlined" density="comfortable" clearable hide-details
+                  @update:model-value="avail.result = null" />
+              </VCol>
+
+              <VCol cols="12" sm="6">
+                <VTextField v-model="avail.start_date" label="Check-in" type="date"
+                  prepend-inner-icon="tabler-calendar-event" variant="outlined" density="comfortable" hide-details
+                  @update:model-value="avail.result = null" />
+              </VCol>
+
+              <VCol cols="12" sm="6">
+                <VTextField v-model="avail.end_date" label="Check-out" type="date"
+                  prepend-inner-icon="tabler-calendar-event" variant="outlined" density="comfortable" hide-details
+                  :min="avail.start_date" @update:model-value="avail.result = null" />
+              </VCol>
+
+              <VCol cols="12" sm="6" class="d-flex gap-2">
+                <VBtn v color="primary" :loading="avail.isLoading" prepend-icon="tabler-search" class="flex-grow-1"
+                  @click="checkAvailability">
+                  Check Availability
+                </VBtn>
+                <VBtn icon="ri-calendar-close-line" variant="tonal" color="primary"
+                  :disabled="!avail.cabinId && !avail.start_date && !avail.end_date && !avail.result"
+                  @click="resetAvailability" />
+              </VCol>
+            </VRow>
+
+            <!-- Result -->
+            <Transition name="avail-fade">
+              <div v-if="avail.error" class="mt-4">
+                <VAlert type="error" variant="tonal" density="compact" closable @click:close="avail.error = ''">
+                  {{ avail.error }}
+                </VAlert>
+              </div>
+
+              <div v-else-if="avail.result" class="mt-4">
+                <VDivider class="mb-4" />
+                <div class="d-flex flex-wrap align-center gap-3">
+                  <VAlert :type="avail.result.available ? 'success' : 'error'" variant="tonal"
+                    :icon="avail.result.available ? 'ri-calendar-check-line' : 'ri-calendar-close-line'"
+                    class="flex-grow-1" style="min-width: 200px;">
+                    <template #title>
+                      {{ avail.result.available ? 'Available!' : 'Not Available' }}
+                    </template>
+                    <template v-if="avail.result.available">
+                      <strong>{{ selectedCabinForAvail?.name }}</strong> is free from
+                      <strong>{{ formatDate(avail.result.start_date) }}</strong> to
+                      <strong>{{ formatDate(avail.result.end_date) }}</strong>.
+                    </template>
+                    <template v-else>
+                      This cabin is already booked for the selected dates.
+                    </template>
+                  </VAlert>
+
+                  <template v-if="avail.result.available">
+                    <VCard variant="tonal" color="primary" min-width="100">
+                      <VCardText class="text-center pa-3">
+                        <p class="text-h5 font-weight-bold mb-0">{{ avail.result.total_days }}</p>
+                        <p class="text-caption text-medium-emphasis mb-0">nights</p>
+                      </VCardText>
+                    </VCard>
+
+                    <VCard variant="tonal" color="success" min-width="120">
+                      <VCardText class="text-center pa-3">
+                        <p class="text-h5 font-weight-bold mb-0">{{ formatCurrency(avail.result.total_price) }}</p>
+                        <p class="text-caption text-medium-emphasis mb-0">total price</p>
+                      </VCardText>
+                    </VCard>
+
+                    <VBtn color="primary" variant="elevated" prepend-icon="tabler-calendar-plus" to="/booking"
+                      size="small">
+                      Reserve
+                    </VBtn>
+                  </template>
+                </div>
+              </div>
+            </Transition>
           </VCardText>
         </VCard>
       </VCol>
@@ -318,18 +383,10 @@ onMounted(fetchAll)
           </VCardItem>
           <VCardText class="pt-2">
             <template v-if="!isLoading && reservations.length">
-              <VueApexCharts
-                type="donut"
-                height="260"
-                :options="donutOptions"
-                :series="donutSeries"
-              />
+              <VueApexCharts type="donut" height="260" :options="donutOptions" :series="donutSeries" />
             </template>
-            <div
-              v-else-if="!isLoading"
-              class="d-flex flex-column align-center justify-center text-medium-emphasis"
-              style="height: 260px;"
-            >
+            <div v-else-if="!isLoading" class="d-flex flex-column align-center justify-center text-medium-emphasis"
+              style="height: 260px;">
               <VIcon icon="tabler-calendar-off" size="40" class="mb-2 opacity-40" />
               <span class="text-body-2">No reservation data</span>
             </div>
@@ -349,10 +406,7 @@ onMounted(fetchAll)
           <VCardItem>
             <VCardTitle class="text-body-1 font-weight-semibold">Recent Reservations</VCardTitle>
             <template #append>
-              <RouterLink
-                to="/booking"
-                class="text-primary text-decoration-none text-body-2 font-weight-medium"
-              >
+              <RouterLink to="/booking" class="text-primary text-decoration-none text-body-2 font-weight-medium">
                 View all
                 <VIcon icon="tabler-arrow-right" size="14" />
               </RouterLink>
@@ -374,6 +428,7 @@ onMounted(fetchAll)
                 <th class="text-caption text-uppercase">Cabin</th>
                 <th class="text-caption text-uppercase">Guests</th>
                 <th class="text-caption text-uppercase">Check-in</th>
+                <th class="text-caption text-uppercase">Check-out</th>
                 <th class="text-caption text-uppercase">Total</th>
                 <th class="text-caption text-uppercase">Status</th>
               </tr>
@@ -402,6 +457,7 @@ onMounted(fetchAll)
                   </div>
                 </td>
                 <td class="text-body-2">{{ formatDate(r.start || r.start_date) }}</td>
+                <td class="text-body-2">{{ formatDate(r.end || r.end_date) }}</td>
                 <td class="text-body-2 font-weight-medium">{{ formatCurrency(r.total_price) }}</td>
                 <td>
                   <VChip :color="getStatusColor(r.status)" size="x-small" label class="text-capitalize">
@@ -420,10 +476,7 @@ onMounted(fetchAll)
           <VCardItem>
             <VCardTitle class="text-body-1 font-weight-semibold">Cabin Overview</VCardTitle>
             <template #append>
-              <RouterLink
-                to="/cabins"
-                class="text-primary text-decoration-none text-body-2 font-weight-medium"
-              >
+              <RouterLink to="/cabins" class="text-primary text-decoration-none text-body-2 font-weight-medium">
                 View all
                 <VIcon icon="tabler-arrow-right" size="14" />
               </RouterLink>
@@ -434,30 +487,21 @@ onMounted(fetchAll)
           <!-- Status summary pills -->
           <VCardText class="pb-2">
             <div class="d-flex gap-3">
-              <div
-                class="flex-1 text-center pa-3 rounded-lg"
-                style="background: rgba(var(--v-theme-success), 0.1);"
-              >
+              <div class="flex-1 text-center pa-3 rounded-lg" style="background: rgba(var(--v-theme-success), 0.1);">
                 <p class="text-h6 font-weight-bold text-success mb-0">
                   <VSkeletonLoader v-if="isLoading" type="text" class="mx-auto" width="30" />
                   <template v-else>{{ cabinsByStatus.available }}</template>
                 </p>
                 <p class="text-caption mb-0">Available</p>
               </div>
-              <div
-                class="flex-1 text-center pa-3 rounded-lg"
-                style="background: rgba(var(--v-theme-warning), 0.1);"
-              >
+              <div class="flex-1 text-center pa-3 rounded-lg" style="background: rgba(var(--v-theme-warning), 0.1);">
                 <p class="text-h6 font-weight-bold text-warning mb-0">
                   <VSkeletonLoader v-if="isLoading" type="text" class="mx-auto" width="30" />
                   <template v-else>{{ cabinsByStatus.maintenance }}</template>
                 </p>
                 <p class="text-caption mb-0">Maintenance</p>
               </div>
-              <div
-                class="flex-1 text-center pa-3 rounded-lg"
-                style="background: rgba(var(--v-theme-error), 0.1);"
-              >
+              <div class="flex-1 text-center pa-3 rounded-lg" style="background: rgba(var(--v-theme-error), 0.1);">
                 <p class="text-h6 font-weight-bold text-error mb-0">
                   <VSkeletonLoader v-if="isLoading" type="text" class="mx-auto" width="30" />
                   <template v-else>{{ cabinsByStatus.unavailable }}</template>
@@ -485,19 +529,9 @@ onMounted(fetchAll)
               </VListItem>
             </template>
 
-            <VListItem
-              v-for="cabin in cabins.slice(0, 7)"
-              :key="cabin.id"
-              class="px-4"
-            >
+            <VListItem v-for="cabin in cabins.slice(0, 7)" :key="cabin.id" class="px-4">
               <template #prepend>
-                <VAvatar
-                  :color="getCabinStatusColor(cabin.status)"
-                  variant="tonal"
-                  size="36"
-                  rounded="lg"
-                  class="me-1"
-                >
+                <VAvatar :color="getCabinStatusColor(cabin.status)" variant="tonal" size="36" rounded="lg" class="me-1">
                   <VIcon icon="tabler-home" size="18" />
                 </VAvatar>
               </template>
@@ -510,12 +544,7 @@ onMounted(fetchAll)
               </VListItemSubtitle>
 
               <template #append>
-                <VChip
-                  :color="getCabinStatusColor(cabin.status)"
-                  size="x-small"
-                  label
-                  class="text-capitalize"
-                >
+                <VChip :color="getCabinStatusColor(cabin.status)" size="x-small" label class="text-capitalize">
                   {{ cabin.status }}
                 </VChip>
               </template>
@@ -526,3 +555,16 @@ onMounted(fetchAll)
     </VRow>
   </div>
 </template>
+
+<style scoped>
+.avail-fade-enter-active,
+.avail-fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.avail-fade-enter-from,
+.avail-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+</style>
