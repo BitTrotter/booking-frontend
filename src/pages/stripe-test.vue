@@ -155,8 +155,6 @@ function fillKey() {
 function copyTestCard() {
   const testCard = '4242 4242 4242 4242'
   navigator.clipboard.writeText(testCard)
-    .then(() => addLog('Número de tarjeta de prueba copiado al portapapeles ✓', 'success'))
-    .catch(err => addLog(`Error al copiar tarjeta: ${err.message ?? err}`, 'error'))
 }
 
 const logColor = { success: 'success', error: 'error', warning: 'warning', info: 'info' }
