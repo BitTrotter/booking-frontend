@@ -24,4 +24,5 @@ export const ROUTE_PERMISSIONS = {
   cabins: 'list_cabin',
   booking: 'list_reservation',
   calendar: 'list_reservation',
+  payments: 'list_payment',
 }

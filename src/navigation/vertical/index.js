@@ -36,4 +36,16 @@ export default [
     icon: { icon: 'ri-calendar-line' },
     permission: 'list_reservation',
   },
+  {
+    title: 'Payments',
+    to: { name: 'payments' },
+    icon: { icon: 'ri-bank-card-line' },
+    permission: 'list_payment',
+  },
+  {
+    title: 'Stripe Tests',
+    to: { name: 'stripe-test' },
+    icon: { icon: 'ri-bank-card-line' },
+    permission: 'list_payment',
+  },
 ]

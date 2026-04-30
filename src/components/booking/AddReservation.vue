@@ -11,6 +11,8 @@ const endDate = ref(null)
 const guests = ref([
   { full_name: '', guest_type: 'adult' },
 ])
+const phone = ref('')
+const email = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
@@ -80,7 +82,7 @@ const removeGuest = index => {
 }
 
 const canSubmit = () => {
-  if (!selectedCabinId.value || !startDate.value || !endDate.value)
+  if (!selectedCabinId.value || !startDate.value || !endDate.value || !phone.value.trim() || !email.value.trim())
     return false
 
   if (!guests.value.length)
@@ -103,6 +105,8 @@ const submitReservation = async () => {
     cabin_id: selectedCabinId.value,
     start_date: startDate.value,
     end_date: endDate.value,
+    phone: phone.value.trim(),
+    email: email.value.trim(),
     guests: guests.value.map(guest => ({
       full_name: guest.full_name.trim(),
       guest_type: guest.guest_type,
@@ -178,6 +182,15 @@ watch(() => props.initialReservation, initialReservation => {
           <AppDateTimePicker v-model="endDate" label="End date" placeholder="YYYY-MM-DD" />
         </VCol>
       </VRow>
+      <VRow>
+        <VCol cols="12" md="6">
+          <VTextField v-model="phone" label="Phone" placeholder="Guest phone number" />
+        </VCol>
+        <VCol cols="12" md="6">
+          <VTextField v-model="email" label="Email" placeholder="Guest email address" />
+        </VCol>
+      </VRow>
+
 
       <VCard variant="tonal" class="mt-2">
         <VCardText class="pa-4">

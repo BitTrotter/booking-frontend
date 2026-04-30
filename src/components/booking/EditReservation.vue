@@ -23,6 +23,8 @@ const startDate = ref(null)
 const endDate = ref(null)
 const guests = ref([{ full_name: '', guest_type: 'adult' }])
 const status = ref('pending')
+const phone = ref('')
+const email = ref('')
 const isSubmitting = ref(false)
 const isDeleting = ref(false)
 const errorMessage = ref('')
@@ -60,6 +62,8 @@ const resetForm = () => {
   endDate.value = null
   guests.value = [{ full_name: '', guest_type: 'adult' }]
   status.value = 'pending'
+  phone.value = ''
+  email.value = ''
   errorMessage.value = ''
 }
 
@@ -74,6 +78,8 @@ const hydrateForm = reservation => {
   endDate.value = reservation.end_date || reservation.end || null
   guests.value = normalizeGuests(reservation.guests)
   status.value = reservation.status || 'pending'
+  phone.value = reservation.phone || ''
+  email.value = reservation.email || ''
   errorMessage.value = ''
 }
 
@@ -111,6 +117,8 @@ const submitReservation = async () => {
     start_date: startDate.value,
     end_date: endDate.value,
     status: status.value,
+    phone: phone.value.trim(),
+    email: email.value.trim(),
     guests: guests.value.map(guest => ({
       full_name: guest.full_name.trim(),
       guest_type: guest.guest_type,
@@ -226,6 +234,26 @@ watch(() => props.reservation, reservation => {
               label="Status"
               :rules="[requiredValidator]"
               required
+            />
+          </VCol>
+        </VRow>
+
+        <VRow class="mt-0">
+          <VCol cols="12" md="6">
+            <VTextField
+              v-model="phone"
+              label="Phone"
+              placeholder="Guest phone number"
+              prepend-inner-icon="ri-phone-line"
+            />
+          </VCol>
+          <VCol cols="12" md="6">
+            <VTextField
+              v-model="email"
+              label="Email"
+              placeholder="Guest email address"
+              prepend-inner-icon="ri-mail-line"
+              type="email"
             />
           </VCol>
         </VRow>

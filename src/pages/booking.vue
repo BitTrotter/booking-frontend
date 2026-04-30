@@ -86,10 +86,28 @@
               {{ formatDate(item.created_at) }}
             </template>
 
+            <template #item.payment_status="{ item }">
+              <VChip
+                v-if="paymentsMap[item.id]"
+                :color="getPaymentStatusColor(paymentsMap[item.id].status)"
+                size="small"
+                label
+              >
+                <VIcon :icon="getPaymentStatusIcon(paymentsMap[item.id].status)" size="14" class="me-1" />
+                {{ paymentsMap[item.id].status }}
+              </VChip>
+              <span v-else class="text-caption text-medium-emphasis">—</span>
+            </template>
+
             <template #item.actions="{ item }">
-              <div class="d-flex justify-end">
-                <VBtn variant="text" color="primary" prepend-icon="ri-pencil-line" @click="openEdit(item)">
-                  Edit
+              <div class="d-flex justify-end gap-1">
+                <VBtn icon variant="text" size="small" color="secondary" @click="openDetail(item)">
+                  <VIcon icon="ri-eye-line" size="18" />
+                  <VTooltip activator="parent">View details</VTooltip>
+                </VBtn>
+                <VBtn icon variant="text" size="small" color="primary" @click="openEdit(item)">
+                  <VIcon icon="ri-pencil-line" size="18" />
+                  <VTooltip activator="parent">Edit</VTooltip>
                 </VBtn>
               </div>
             </template>
@@ -100,6 +118,11 @@
       <AddReservation v-model:isDialogVisible="isAddReservationDialogVisible" />
       <EditReservation v-model:isDialogVisible="isEditReservationDialogVisible" :reservation="selectedReservation"
         @reservation-updated="list" />
+      <ReservationDetail
+        v-model:isDialogVisible="isDetailDialogVisible"
+        :reservation="selectedReservation"
+        :payment="selectedReservation ? paymentsMap[selectedReservation.id] : null"
+      />
     </VCard>
   </div>
 </template>
@@ -107,6 +130,7 @@
 <script setup>
 import AddReservation from '@/components/booking/AddReservation.vue'
 import EditReservation from '@/components/booking/EditReservation.vue'
+import ReservationDetail from '@/components/booking/ReservationDetail.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 
 const headers = [
@@ -117,17 +141,34 @@ const headers = [
   { title: 'End Date', key: 'end' },
   { title: 'Total Price', key: 'total_price' },
   { title: 'Status', key: 'status' },
+  { title: 'Payment', key: 'payment_status' },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ]
 
 const searchQuery = ref('')
 const isAddReservationDialogVisible = ref(false)
 const isEditReservationDialogVisible = ref(false)
+const isDetailDialogVisible = ref(false)
 const data = ref([])
+const paymentsMap = ref({})
 const selectedReservation = ref(null)
 const loading = ref(false)
 const confirmedReservations = computed(() => data.value.filter(item => item.status === 'confirmed').length)
 const pendingReservations = computed(() => data.value.filter(item => item.status === 'pending').length)
+
+const getPaymentStatusColor = status => ({
+  paid: 'success',
+  pending: 'warning',
+  failed: 'error',
+  refunded: 'info',
+}[status] || 'secondary')
+
+const getPaymentStatusIcon = status => ({
+  paid: 'ri-checkbox-circle-line',
+  pending: 'ri-time-line',
+  failed: 'ri-close-circle-line',
+  refunded: 'ri-refund-2-line',
+}[status] || 'ri-bank-card-line')
 
 
 const formatDate = (date) => {
@@ -159,20 +200,31 @@ const getStatusColor = status => {
 
 const list = async () => {
   loading.value = true
-  const resp = await $api(`/reservations?search=${encodeURIComponent(searchQuery.value || '')}`, {
-    method: 'GET',
-    onResponseError: ({ response }) => {
-      throw new Error(response.statusText || 'Failed to load reservations')
-    },
-  })
+
+  const [resp, payments] = await Promise.all([
+    $api(`/reservations?search=${encodeURIComponent(searchQuery.value || '')}`, {
+      method: 'GET',
+      onResponseError: ({ response }) => { throw new Error(response.statusText || 'Failed to load reservations') },
+    }),
+    $api('/payments', { method: 'GET' }).catch(() => []),
+  ])
 
   data.value = Array.isArray(resp) ? resp : resp?.reservations || []
+
+  const list = Array.isArray(payments) ? payments : payments?.data || []
+  paymentsMap.value = Object.fromEntries(list.map(p => [p.reservation_id, p]))
+
   loading.value = false
 }
 
 const openEdit = item => {
   selectedReservation.value = item
   isEditReservationDialogVisible.value = true
+}
+
+const openDetail = item => {
+  selectedReservation.value = item
+  isDetailDialogVisible.value = true
 }
 
 onMounted(() => {
