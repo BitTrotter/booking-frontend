@@ -25,4 +25,6 @@ export const ROUTE_PERMISSIONS = {
   booking: 'list_reservation',
   calendar: 'list_reservation',
   payments: 'list_payment',
+  'stripe-test': 'list_su',
+
 }

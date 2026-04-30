@@ -143,5 +143,14 @@ export const PERMISOS = [
         permiso: 'show_payment_details'
       }
     ]
+  },
+  {
+    name: 'Stripe Tests',
+    permisos: [
+      {
+        name: 'List',
+        permiso: 'list_su'
+      }
+    ]
   }
 ];

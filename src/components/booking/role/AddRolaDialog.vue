@@ -1,6 +1,4 @@
 <script setup>
-import { PERMISOS } from '@/utils/constants'
-
 const props = defineProps({
     isDialogVisible: {
         type: Boolean,
@@ -12,37 +10,70 @@ const emit = defineEmits(['update:isDialogVisible', 'saved'])
 
 const role_name = ref('')
 const permissions = ref([])
+const availablePermissions = ref([])
 const isLoading = ref(false)
+const isFetchingPerms = ref(false)
 const warnError = ref('')
 const nameError = ref('')
 
-const list_permission = PERMISOS
-const totalPermissions = computed(() => PERMISOS.reduce((acc, m) => acc + m.permisos.length, 0))
+const groupedPermissions = computed(() => {
+    const groups = {}
+    availablePermissions.value.forEach(p => {
+        const entity = p.name.split('_').slice(1).join('_')
+        if (!groups[entity]) groups[entity] = []
+        groups[entity].push(p)
+    })
+    return Object.entries(groups)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([entity, perms]) => ({
+            name: entity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            permisos: perms,
+        }))
+})
 
-const togglePermission = (permiso) => {
-    const idx = permissions.value.indexOf(permiso)
-    if (idx === -1) permissions.value.push(permiso)
+const totalPermissions = computed(() => availablePermissions.value.length)
+
+const fetchAvailablePermissions = async () => {
+    isFetchingPerms.value = true
+    try {
+        const resp = await $api('/permissions', { method: 'GET' })
+        availablePermissions.value = Array.isArray(resp) ? resp : resp?.permissions || []
+    } catch {
+        availablePermissions.value = []
+    } finally {
+        isFetchingPerms.value = false
+    }
+}
+
+watch(() => props.isDialogVisible, visible => {
+    if (visible) fetchAvailablePermissions()
+})
+
+const togglePermission = name => {
+    const idx = permissions.value.indexOf(name)
+    if (idx === -1) permissions.value.push(name)
     else permissions.value.splice(idx, 1)
 }
 
-const isModuleAllSelected = (module) =>
-    module.permisos.every(p => permissions.value.includes(p.permiso))
+const isModuleAllSelected = module =>
+    module.permisos.every(p => permissions.value.includes(p.name))
 
-const isModulePartialSelected = (module) =>
-    module.permisos.some(p => permissions.value.includes(p.permiso)) && !isModuleAllSelected(module)
+const isModulePartialSelected = module =>
+    module.permisos.some(p => permissions.value.includes(p.name)) && !isModuleAllSelected(module)
 
-const toggleModule = (module) => {
+const toggleModule = module => {
     if (isModuleAllSelected(module)) {
-        permissions.value = permissions.value.filter(p => !module.permisos.map(x => x.permiso).includes(p))
+        const names = module.permisos.map(p => p.name)
+        permissions.value = permissions.value.filter(p => !names.includes(p))
     } else {
         module.permisos.forEach(p => {
-            if (!permissions.value.includes(p.permiso)) permissions.value.push(p.permiso)
+            if (!permissions.value.includes(p.name)) permissions.value.push(p.name)
         })
     }
 }
 
 const selectAll = () => {
-    permissions.value = PERMISOS.flatMap(m => m.permisos.map(p => p.permiso))
+    permissions.value = availablePermissions.value.map(p => p.name)
 }
 
 const clearAll = () => {
@@ -182,15 +213,18 @@ const saveRole = async () => {
                 </VAlert>
 
                 <!-- Permissions Table -->
-                <VTable density="comfortable" class="permissions-table rounded-lg">
+                <div v-if="isFetchingPerms" class="d-flex justify-center py-6">
+                    <VProgressCircular indeterminate color="primary" />
+                </div>
+                <VTable v-else density="comfortable" class="permissions-table rounded-lg">
                     <thead>
                         <tr>
-                            <th style="min-width: 200px">Module</th>
+                            <th style="min-width: 180px">Module</th>
                             <th>Permissions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="module in list_permission" :key="module.name">
+                        <tr v-for="module in groupedPermissions" :key="module.name">
                             <td>
                                 <div class="d-flex align-center gap-1">
                                     <VCheckbox
@@ -208,16 +242,16 @@ const saveRole = async () => {
                                 <div class="d-flex flex-wrap gap-2 py-2">
                                     <VChip
                                         v-for="permiso in module.permisos"
-                                        :key="permiso.permiso"
-                                        :color="permissions.includes(permiso.permiso) ? 'primary' : 'default'"
-                                        :variant="permissions.includes(permiso.permiso) ? 'tonal' : 'outlined'"
+                                        :key="permiso.id"
+                                        :color="permissions.includes(permiso.name) ? 'primary' : 'default'"
+                                        :variant="permissions.includes(permiso.name) ? 'tonal' : 'outlined'"
                                         size="small"
                                         label
                                         class="permission-chip"
-                                        @click="togglePermission(permiso.permiso)"
+                                        @click="togglePermission(permiso.name)"
                                     >
                                         <VIcon
-                                            v-if="permissions.includes(permiso.permiso)"
+                                            v-if="permissions.includes(permiso.name)"
                                             start
                                             icon="tabler-check"
                                             size="12"

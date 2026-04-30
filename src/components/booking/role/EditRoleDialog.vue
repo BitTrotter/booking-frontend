@@ -1,64 +1,85 @@
 <script setup>
-import { PERMISOS } from '@/utils/constants'
-
 const props = defineProps({
-    isDialogVisible: {
-        type: Boolean,
-        required: true,
-    },
-    role: {
-        type: Object,
-        default: null,
-    },
+    isDialogVisible: { type: Boolean, required: true },
+    role: { type: Object, default: null },
 })
 
 const emit = defineEmits(['update:isDialogVisible', 'saved'])
 
 const role_name = ref('')
-const permissions = ref([])
+const permissions = ref([])       // selected permission names (strings)
+const availablePermissions = ref([]) // { id, name }[] from API
 const isLoading = ref(false)
+const isFetchingPerms = ref(false)
 const warnError = ref('')
 const nameError = ref('')
 
-const list_permission = PERMISOS
-const totalPermissions = computed(() => PERMISOS.reduce((acc, m) => acc + m.permisos.length, 0))
+// Group flat API permissions by the entity part of the name
+// e.g. "create_payment" → group "Payment", "show_dashboard_reports" → group "Dashboard Reports"
+const groupedPermissions = computed(() => {
+    const groups = {}
+    availablePermissions.value.forEach(p => {
+        const entity = p.name.split('_').slice(1).join('_')
+        if (!groups[entity]) groups[entity] = []
+        groups[entity].push(p)
+    })
+    return Object.entries(groups)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([entity, perms]) => ({
+            name: entity.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            permisos: perms,
+        }))
+})
 
-// Populate form whenever the dialog opens with a role
+const totalPermissions = computed(() => availablePermissions.value.length)
+
+const fetchAvailablePermissions = async () => {
+    isFetchingPerms.value = true
+    try {
+        const resp = await $api('/permissions', { method: 'GET' })
+        availablePermissions.value = Array.isArray(resp) ? resp : resp?.permissions || []
+    } catch {
+        availablePermissions.value = []
+    } finally {
+        isFetchingPerms.value = false
+    }
+}
+
 watch(() => props.isDialogVisible, visible => {
     if (visible && props.role) {
         role_name.value = props.role.name ?? ''
-        permissions.value = Array.isArray(props.role.permissions)
-            ? [...props.role.permissions]
-            : []
+        permissions.value = Array.isArray(props.role.permissions) ? [...props.role.permissions] : []
         warnError.value = ''
         nameError.value = ''
+        fetchAvailablePermissions()
     }
 })
 
-const togglePermission = permiso => {
-    const idx = permissions.value.indexOf(permiso)
-    if (idx === -1) permissions.value.push(permiso)
+const togglePermission = name => {
+    const idx = permissions.value.indexOf(name)
+    if (idx === -1) permissions.value.push(name)
     else permissions.value.splice(idx, 1)
 }
 
 const isModuleAllSelected = module =>
-    module.permisos.every(p => permissions.value.includes(p.permiso))
+    module.permisos.every(p => permissions.value.includes(p.name))
 
 const isModulePartialSelected = module =>
-    module.permisos.some(p => permissions.value.includes(p.permiso)) && !isModuleAllSelected(module)
+    module.permisos.some(p => permissions.value.includes(p.name)) && !isModuleAllSelected(module)
 
 const toggleModule = module => {
     if (isModuleAllSelected(module)) {
-        permissions.value = permissions.value.filter(p => !module.permisos.map(x => x.permiso).includes(p))
+        const names = module.permisos.map(p => p.name)
+        permissions.value = permissions.value.filter(p => !names.includes(p))
     } else {
         module.permisos.forEach(p => {
-            if (!permissions.value.includes(p.permiso)) permissions.value.push(p.permiso)
+            if (!permissions.value.includes(p.name)) permissions.value.push(p.name)
         })
     }
 }
 
 const selectAll = () => {
-    permissions.value = PERMISOS.flatMap(m => m.permisos.map(p => p.permiso))
+    permissions.value = availablePermissions.value.map(p => p.name)
 }
 
 const clearAll = () => {
@@ -89,7 +110,6 @@ const close = () => {
 
 const saveRole = async () => {
     if (!validate()) return
-
     isLoading.value = true
     try {
         await $api(`/role/${props.role.id}`, {
@@ -110,12 +130,8 @@ const saveRole = async () => {
 </script>
 
 <template>
-    <VDialog
-        :model-value="props.isDialogVisible"
-        max-width="800"
-        scrollable
-        @update:model-value="val => !val && close()"
-    >
+    <VDialog :model-value="props.isDialogVisible" max-width="800" scrollable
+        @update:model-value="val => !val && close()">
         <VCard>
             <!-- Header -->
             <VCardItem class="py-4 px-6">
@@ -140,18 +156,9 @@ const saveRole = async () => {
 
             <VCardText class="pa-6">
                 <!-- Role Name Field -->
-                <VTextField
-                    v-model="role_name"
-                    label="Role Name"
-                    placeholder="e.g. Manager, Receptionist..."
-                    prepend-inner-icon="tabler-id-badge"
-                    :error-messages="nameError"
-                    variant="outlined"
-                    density="comfortable"
-                    clearable
-                    class="mb-6"
-                    @update:model-value="nameError = ''"
-                />
+                <VTextField v-model="role_name" label="Role Name" placeholder="e.g. Manager, Receptionist..."
+                    prepend-inner-icon="tabler-id-badge" :error-messages="nameError" variant="outlined"
+                    density="comfortable" clearable class="mb-6" @update:model-value="nameError = ''" />
 
                 <!-- Permissions Section Header -->
                 <div class="d-flex align-center justify-space-between mb-3">
@@ -159,11 +166,7 @@ const saveRole = async () => {
                         <span class="text-subtitle-2 font-weight-semibold text-uppercase text-medium-emphasis">
                             Permissions
                         </span>
-                        <VChip
-                            :color="permissions.length > 0 ? 'warning' : 'default'"
-                            size="x-small"
-                            label
-                        >
+                        <VChip :color="permissions.length > 0 ? 'warning' : 'default'" size="x-small" label>
                             {{ permissions.length }} / {{ totalPermissions }}
                         </VChip>
                     </div>
@@ -178,59 +181,41 @@ const saveRole = async () => {
                 </div>
 
                 <!-- Error Alert -->
-                <VAlert
-                    v-if="warnError"
-                    type="error"
-                    variant="tonal"
-                    closable
-                    density="compact"
-                    class="mb-4"
-                    @click:close="warnError = ''"
-                >
+                <VAlert v-if="warnError" type="error" variant="tonal" closable density="compact" class="mb-4"
+                    @click:close="warnError = ''">
                     {{ warnError }}
                 </VAlert>
 
                 <!-- Permissions Table -->
-                <VTable density="comfortable" class="permissions-table rounded-lg">
+                <div v-if="isFetchingPerms" class="d-flex justify-center py-6">
+                    <VProgressCircular indeterminate color="warning" />
+                </div>
+                <VTable v-else density="comfortable" class="permissions-table rounded-lg">
                     <thead>
                         <tr>
-                            <th style="min-width: 200px">Module</th>
+                            <th style="min-width: 180px">Module</th>
                             <th>Permissions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="module in list_permission" :key="module.name">
+                        <tr v-for="module in groupedPermissions" :key="module.name">
                             <td>
                                 <div class="d-flex align-center gap-1">
-                                    <VCheckbox
-                                        :model-value="isModuleAllSelected(module)"
-                                        :indeterminate="isModulePartialSelected(module)"
-                                        hide-details
-                                        density="compact"
-                                        color="warning"
-                                        @click.prevent="toggleModule(module)"
-                                    />
+                                    <VCheckbox :model-value="isModuleAllSelected(module)"
+                                        :indeterminate="isModulePartialSelected(module)" hide-details density="compact"
+                                        color="warning" @click.prevent="toggleModule(module)" />
                                     <span class="text-body-2 font-weight-medium">{{ module.name }}</span>
                                 </div>
                             </td>
                             <td>
                                 <div class="d-flex flex-wrap gap-2 py-2">
-                                    <VChip
-                                        v-for="permiso in module.permisos"
-                                        :key="permiso.permiso"
-                                        :color="permissions.includes(permiso.permiso) ? 'warning' : 'default'"
-                                        :variant="permissions.includes(permiso.permiso) ? 'tonal' : 'outlined'"
-                                        size="small"
-                                        label
-                                        class="permission-chip"
-                                        @click="togglePermission(permiso.permiso)"
-                                    >
-                                        <VIcon
-                                            v-if="permissions.includes(permiso.permiso)"
-                                            start
-                                            icon="tabler-check"
-                                            size="12"
-                                        />
+                                    <VChip v-for="permiso in module.permisos" :key="permiso.id"
+                                        :color="permissions.includes(permiso.name) ? 'warning' : 'default'"
+                                        :variant="permissions.includes(permiso.name) ? 'tonal' : 'outlined'"
+                                        size="small" label class="permission-chip"
+                                        @click="togglePermission(permiso.name)">
+                                        <VIcon v-if="permissions.includes(permiso.name)" start icon="tabler-check"
+                                            size="12" />
                                         {{ permiso.name }}
                                     </VChip>
                                 </div>
@@ -247,13 +232,8 @@ const saveRole = async () => {
                 <VBtn variant="tonal" color="secondary" @click="close">
                     Cancel
                 </VBtn>
-                <VBtn
-                    variant="elevated"
-                    color="warning"
-                    :loading="isLoading"
-                    prepend-icon="tabler-device-floppy"
-                    @click="saveRole"
-                >
+                <VBtn variant="elevated" color="warning" :loading="isLoading" prepend-icon="tabler-device-floppy"
+                    @click="saveRole">
                     Save Changes
                 </VBtn>
             </VCardActions>

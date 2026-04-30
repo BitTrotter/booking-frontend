@@ -14,6 +14,9 @@
             <VTextField v-model="searchQuery" placeholder="Search by role name" prepend-inner-icon="ri-search-line"
               density="comfortable" style="inline-size: 280px;" hide-details @update:model-value="list" />
 
+            <VBtn variant="tonal" color="warning" prepend-icon="ri-shield-keyhole-line" @click="isManagePermissionsVisible = true">
+              Permissions
+            </VBtn>
             <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddRoleDialogVisible = true">
               Add Role
             </VBtn>
@@ -73,6 +76,7 @@
 
     <AddRolaDialog v-model:isDialogVisible="isAddRoleDialogVisible" @saved="list" />
     <EditRoleDialog v-model:isDialogVisible="isEditRoleDialogVisible" :role="selectedRole" @saved="list" />
+    <ManagePermissions v-model:isDialogVisible="isManagePermissionsVisible" />
 
     <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
       {{ snackBar.message }}
@@ -82,6 +86,7 @@
 
 
 <script setup>
+import ManagePermissions from '@/components/booking/role/ManagePermissions.vue'
 import { computed, onMounted, ref } from 'vue'
 
 const headers = [
@@ -94,6 +99,7 @@ const headers = [
 const searchQuery = ref('')
 const isAddRoleDialogVisible = ref(false)
 const isEditRoleDialogVisible = ref(false)
+const isManagePermissionsVisible = ref(false)
 const selectedRole = ref(null)
 const loading = ref(false)
 const data = ref([])

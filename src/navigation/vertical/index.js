@@ -46,6 +46,6 @@ export default [
     title: 'Stripe Tests',
     to: { name: 'stripe-test' },
     icon: { icon: 'ri-bank-card-line' },
-    permission: 'list_payment',
+    permission: 'list_su',
   },
 ]
