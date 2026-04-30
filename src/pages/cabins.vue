@@ -86,12 +86,15 @@
                         </template>
 
                         <template #item.actions="{ item }">
-                            <div class="d-flex gap-2 justify-end">
-                                <VBtn variant="text" color="primary" size="small" prepend-icon="ri-pencil-line"
-                                    @click="openEdit(item)">
-                                    Edit
+                            <div class="d-flex gap-1 justify-end">
+                                <VBtn icon variant="text" size="small" color="secondary" @click="openDetail(item)">
+                                    <VIcon icon="ri-eye-line" size="18" />
+                                    <VTooltip activator="parent">View details</VTooltip>
                                 </VBtn>
-
+                                <VBtn icon variant="text" size="small" color="primary" @click="openEdit(item)">
+                                    <VIcon icon="ri-pencil-line" size="18" />
+                                    <VTooltip activator="parent">Edit</VTooltip>
+                                </VBtn>
                             </div>
                         </template>
                     </VDataTable>
@@ -100,6 +103,7 @@
 
             <AddCabin v-model:isDialogVisible="isAddCabinDialogVisible" />
             <EditCabin v-model:isDialogEditVisible="isEditCabinDialogVisible" :cabin="selectedCabin" />
+            <CabinDetail v-model:isDialogVisible="isDetailCabinDialogVisible" :cabin="selectedCabin" />
 
             <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
                 {{ snackBar.message }}
@@ -110,6 +114,7 @@
 
 <script setup>
 import AddCabin from '@/components/cabins/AddCabin.vue'
+import CabinDetail from '@/components/cabins/CabinDetail.vue'
 import EditCabin from '@/components/cabins/EditCabin.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 
@@ -135,6 +140,7 @@ const statusOptions = [
 
 const isAddCabinDialogVisible = ref(false)
 const isEditCabinDialogVisible = ref(false)
+const isDetailCabinDialogVisible = ref(false)
 const selectedCabin = ref(null)
 const snackBar = ref({
     visible: false,
@@ -186,7 +192,7 @@ const list = async () => {
     loading.value = true
 
     try {
-        const resp = await $api(`/cabins?search=${encodeURIComponent(searchQuery.value || '')}`, {
+        const resp = await $api(`/cabins`, {
             method: 'GET',
             onResponseError: ({ response }) => {
                 throw new Error(response.statusText || 'Failed to load cabins')
@@ -200,6 +206,11 @@ const list = async () => {
     } finally {
         loading.value = false
     }
+}
+
+const openDetail = item => {
+    selectedCabin.value = item
+    isDetailCabinDialogVisible.value = true
 }
 
 const openEdit = item => {
