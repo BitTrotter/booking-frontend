@@ -1,19 +1,21 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { requiredValidator } from '@/@core/utils/validators'
 
-const emit = defineEmits(['update:isDialogEditVisible', 'cabin-updated'])
+const emit = defineEmits(['update:isDialogVisible', 'cabin-saved'])
 
 const props = defineProps({
-  isDialogEditVisible: {
+  isDialogVisible: {
     type: Boolean,
     required: true,
   },
   cabin: {
     type: Object,
-    required: false,
+    default: null,
   },
 })
+
+const isEditMode = computed(() => !!props.cabin?.id)
 
 const refCabinForm = ref()
 const refPriceRuleForm = ref()
@@ -70,7 +72,23 @@ const dialogVisibleUpdate = val => {
     cabinImagesPayload.value = []
     previewUrls.value = []
   }
-  emit('update:isDialogEditVisible', val)
+  emit('update:isDialogVisible', val)
+}
+
+const resetForm = () => {
+  name.value = ''
+  description.value = ''
+  price_per_night.value = null
+  capacity.value = null
+  beds.value = null
+  bathrooms.value = null
+  selectedFeatures.value = []
+  status.value = 'available'
+  images.value = []
+  showNewFeatureForm.value = false
+  newFeatureName.value = ''
+  activeTab.value = 0
+  refCabinForm.value?.reset()
 }
 
 // ─── Images ──────────────────────────────────────────────────────────────────
@@ -95,10 +113,10 @@ const removeFileFromPayload = index => {
 const setMainImage = async selectedImage => {
   if (!selectedImage?.id) return
 
-  const previousImages = images.value.map(image => ({ ...image }))
-  images.value = images.value.map(image => ({
-    ...image,
-    is_main: image.id === selectedImage.id,
+  const previousImages = images.value.map(img => ({ ...img }))
+  images.value = images.value.map(img => ({
+    ...img,
+    is_main: img.id === selectedImage.id,
   }))
   updatingMainImageId.value = selectedImage.id
 
@@ -129,7 +147,7 @@ const deleteExistingImage = async imageToDelete => {
         throw new Error(response.statusText || 'Error deleting image')
       },
     })
-    images.value = images.value.filter(image => image.id !== imageToDelete.id)
+    images.value = images.value.filter(img => img.id !== imageToDelete.id)
   } catch (error) {
     console.error('Error deleting image:', error)
   } finally {
@@ -279,23 +297,29 @@ const submitCabin = async () => {
   }
 
   try {
-    const resp = await $api(`/cabins/${props.cabin.id}`, {
-      method: 'PUT',
-      body: payload,
-      onResponseError: ({ response }) => {
-        throw new Error(response.statusText || 'Error saving cabin')
-      },
-    })
+    const resp = isEditMode.value
+      ? await $api(`/cabins/${props.cabin.id}`, {
+        method: 'PUT',
+        body: payload,
+        onResponseError: ({ response }) => { throw new Error(response.statusText || 'Error saving cabin') },
+      })
+      : await $api('/cabins', {
+        method: 'POST',
+        body: payload,
+        onResponseError: ({ response }) => { throw new Error(response.statusText || 'Error creating cabin') },
+      })
 
-    await $api(`/cabins/${props.cabin.id}/features`, {
-      method: 'POST',
-      body: { features: selectedFeatures.value },
-      onResponseError: ({ response }) => {
-        throw new Error(response.statusText || 'Error syncing features')
-      },
-    })
+    const cabin = resp.data ?? resp
 
-    emit('cabin-updated', resp.data ?? resp)
+    if (selectedFeatures.value.length > 0) {
+      await $api(`/cabins/${cabin.id}/features`, {
+        method: 'POST',
+        body: { features: selectedFeatures.value },
+        onResponseError: ({ response }) => { throw new Error(response.statusText || 'Error syncing features') },
+      })
+    }
+
+    emit('cabin-saved', cabin)
     dialogVisibleUpdate(false)
   } catch (error) {
     console.error('Error submitting cabin:', error)
@@ -304,11 +328,11 @@ const submitCabin = async () => {
   }
 }
 
-const deleteItem = async cabin => {
+const deleteItem = async () => {
   if (!confirm('Are you sure you want to delete this cabin?')) return
 
   try {
-    await $api(`/cabins/${cabin.id}`, {
+    await $api(`/cabins/${props.cabin.id}`, {
       method: 'DELETE',
       onResponseError: ({ response }) => {
         throw new Error(response.statusText || 'Error deleting cabin')
@@ -321,16 +345,13 @@ const deleteItem = async cabin => {
 }
 
 onMounted(() => {
-  watch(() => props.isDialogEditVisible, async val => {
+  watch(() => props.isDialogVisible, async val => {
     if (val) {
       activeTab.value = 0
       await loadFeatures()
-      await loadCabinDetails()
+      if (isEditMode.value) await loadCabinDetails()
     } else {
-      cabinImagesPayload.value = []
-      previewUrls.value = []
-      showNewFeatureForm.value = false
-      newFeatureName.value = ''
+      resetForm()
     }
   })
 })
@@ -338,7 +359,7 @@ onMounted(() => {
 
 <template>
   <VDialog
-    :model-value="props.isDialogEditVisible"
+    :model-value="props.isDialogVisible"
     max-width="800"
     scrollable
     @update:model-value="dialogVisibleUpdate"
@@ -348,8 +369,10 @@ onMounted(() => {
       <!-- Header -->
       <VCardText class="d-flex justify-space-between align-center px-6 py-4">
         <div>
-          <div class="text-h5 font-weight-bold">Edit Cabin</div>
-          <div class="text-body-2 text-medium-emphasis mt-1">Update information for this cabin</div>
+          <div class="text-h5 font-weight-bold">{{ isEditMode ? 'Edit Cabin' : 'New Cabin' }}</div>
+          <div class="text-body-2 text-medium-emphasis mt-1">
+            {{ isEditMode ? 'Update information for this cabin' : 'Fill in the details to register a new cabin' }}
+          </div>
         </div>
         <VBtn icon variant="text" size="small" @click="dialogVisibleUpdate(false)">
           <VIcon>ri-close-line</VIcon>
@@ -358,20 +381,20 @@ onMounted(() => {
 
       <VDivider />
 
-      <!-- Tabs -->
+      <!-- Tabs — always visible; Images & Price Rules disabled until cabin is created -->
       <VTabs v-model="activeTab" color="primary" class="px-2">
         <VTab>
           <VIcon start icon="ri-information-line" />
           General
         </VTab>
-        <VTab>
+        <VTab :disabled="!isEditMode">
           <VIcon start icon="ri-image-line" />
           Images
           <VChip v-if="images.length" size="x-small" color="primary" class="ml-2">
             {{ images.length }}
           </VChip>
         </VTab>
-        <VTab>
+        <VTab :disabled="!isEditMode">
           <VIcon start icon="ri-price-tag-3-line" />
           Price Rules
         </VTab>
@@ -434,7 +457,8 @@ onMounted(() => {
                   <VTextField
                     v-model="price_per_night"
                     type="number"
-                    label="Base price per Night"
+                    label="Price per Night"
+                    placeholder="1500"
                     prefix="$"
                     min="0"
                     prepend-inner-icon="ri-money-dollar-circle-line"
@@ -541,7 +565,6 @@ onMounted(() => {
           <!-- ── Images Tab ─────────────────────────────────────────────────── -->
           <VWindowItem>
 
-            <!-- Upload section -->
             <div class="d-flex align-center gap-2 mb-4">
               <VIcon size="18" color="primary">ri-upload-cloud-2-line</VIcon>
               <span class="text-subtitle-1 font-weight-semibold">Upload New Images</span>
@@ -559,19 +582,12 @@ onMounted(() => {
               class="mb-4"
             />
 
-            <!-- Preview of selected files -->
             <div v-if="previewUrls.length" class="mb-2">
               <div class="text-body-2 text-medium-emphasis font-weight-medium mb-3">
                 Selected — {{ previewUrls.length }} {{ previewUrls.length === 1 ? 'image' : 'images' }}
               </div>
               <VRow dense>
-                <VCol
-                  v-for="(url, index) in previewUrls"
-                  :key="index"
-                  cols="6"
-                  sm="4"
-                  md="3"
-                >
+                <VCol v-for="(url, index) in previewUrls" :key="index" cols="6" sm="4" md="3">
                   <VCard variant="outlined" class="overflow-hidden position-relative">
                     <VImg :src="url" height="110" cover class="bg-grey-lighten-3" />
                     <VBtn
@@ -594,12 +610,7 @@ onMounted(() => {
               </VRow>
 
               <div class="mt-4">
-                <VBtn
-                  color="primary"
-                  prepend-icon="ri-upload-cloud-2-line"
-                  :loading="uploadingImages"
-                  @click="uploadImages"
-                >
+                <VBtn color="primary" prepend-icon="ri-upload-cloud-2-line" :loading="uploadingImages" @click="uploadImages">
                   Upload {{ previewUrls.length }} {{ previewUrls.length === 1 ? 'Image' : 'Images' }}
                 </VBtn>
               </div>
@@ -607,7 +618,6 @@ onMounted(() => {
 
             <VDivider class="my-5" />
 
-            <!-- Existing images -->
             <div class="d-flex align-center gap-2 mb-4">
               <VIcon size="18" color="primary">ri-gallery-line</VIcon>
               <span class="text-subtitle-1 font-weight-semibold">Existing Images</span>
@@ -615,13 +625,7 @@ onMounted(() => {
             </div>
 
             <VRow v-if="images.length">
-              <VCol
-                v-for="(image, index) in images"
-                :key="image.id || index"
-                cols="12"
-                sm="6"
-                lg="4"
-              >
+              <VCol v-for="(image, index) in images" :key="image.id || index" cols="12" sm="6" lg="4">
                 <VCard variant="outlined" class="overflow-hidden h-100">
                   <VImg :src="getImageUrl(image)" height="200" cover class="bg-grey-lighten-3">
                     <div class="d-flex pa-3">
@@ -641,13 +645,7 @@ onMounted(() => {
                         :disabled="updatingMainImageId === image.id"
                         @update:model-value="value => value && setMainImage(image)"
                       />
-                      <VBtn
-                        color="error"
-                        variant="tonal"
-                        size="small"
-                        :loading="deletingImageId === image.id"
-                        @click="deleteExistingImage(image)"
-                      >
+                      <VBtn color="error" variant="tonal" size="small" :loading="deletingImageId === image.id" @click="deleteExistingImage(image)">
                         Delete
                       </VBtn>
                     </div>
@@ -656,13 +654,7 @@ onMounted(() => {
               </VCol>
             </VRow>
 
-            <VAlert
-              v-else
-              type="info"
-              variant="tonal"
-              class="mb-4"
-              text="This cabin has no images yet."
-            />
+            <VAlert v-else type="info" variant="tonal" class="mb-4" text="This cabin has no images yet." />
 
           </VWindowItem>
 
@@ -677,47 +669,19 @@ onMounted(() => {
 
               <VRow>
                 <VCol cols="12" md="6">
-                  <VSelect
-                    v-model="typeRule"
-                    label="Rule type"
-                    :items="priceRuleTypes"
-                    :rules="[requiredValidator]"
-                  />
+                  <VSelect v-model="typeRule" label="Rule type" :items="priceRuleTypes" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="typeRulePrice"
-                    label="Rule price per night"
-                    type="number"
-                    prefix="$"
-                    min="0"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="typeRulePrice" label="Rule price per night" type="number" prefix="$" min="0" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="starDate"
-                    label="Start date"
-                    type="date"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="starDate" label="Start date" type="date" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="endDate"
-                    label="End date"
-                    type="date"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="endDate" label="End date" type="date" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="minNights"
-                    label="Minimum nights"
-                    type="number"
-                    min="1"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="minNights" label="Minimum nights" type="number" min="1" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
                   <VSelect
@@ -733,13 +697,7 @@ onMounted(() => {
               </VRow>
 
               <div class="pt-2 pb-1">
-                <VBtn
-                  variant="tonal"
-                  color="primary"
-                  prepend-icon="ri-price-tag-3-line"
-                  :loading="submittingRule"
-                  @click="submitRulePrice"
-                >
+                <VBtn variant="tonal" color="primary" prepend-icon="ri-price-tag-3-line" :loading="submittingRule" @click="submitRulePrice">
                   Save Price Rule
                 </VBtn>
               </div>
@@ -756,7 +714,7 @@ onMounted(() => {
       <VCardText class="d-flex gap-3 pa-4">
         <template v-if="activeTab === 0">
           <VBtn color="primary" :loading="submitting" prepend-icon="ri-save-line" @click="submitCabin">
-            Save Changes
+            {{ isEditMode ? 'Save Changes' : 'Create Cabin' }}
           </VBtn>
           <VBtn color="secondary" variant="tonal" @click="dialogVisibleUpdate(false)">
             Cancel
@@ -768,7 +726,7 @@ onMounted(() => {
           </VBtn>
         </template>
         <VSpacer />
-        <VBtn color="error" variant="tonal" prepend-icon="ri-delete-bin-line" @click="deleteItem(props.cabin)">
+        <VBtn v-if="isEditMode" color="error" variant="tonal" prepend-icon="ri-delete-bin-line" @click="deleteItem">
           Delete Cabin
         </VBtn>
       </VCardText>

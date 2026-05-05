@@ -76,11 +76,11 @@
                             </VChip>
                         </template>
 
-                        <template #item.services="{ item }">
+                        <template #item.features="{ item }">
                             <div class="d-flex flex-wrap gap-2 py-2">
-                                <VChip v-for="(service, index) in item.services || []"
+                                <VChip v-for="(service, index) in item.features || []"
                                     :key="`${item.id}-${service}-${index}`" size="small" variant="tonal">
-                                    {{ service }}
+                                    {{ service.name }}
                                 </VChip>
                             </div>
                         </template>
@@ -101,8 +101,8 @@
                 </VCard>
             </VCardText>
 
-            <AddCabin v-model:isDialogVisible="isAddCabinDialogVisible" />
-            <EditCabin v-model:isDialogEditVisible="isEditCabinDialogVisible" :cabin="selectedCabin" />
+            <CabinDialog v-model:isDialogVisible="isAddCabinDialogVisible" @cabin-saved="list" />
+            <CabinDialog v-model:isDialogVisible="isEditCabinDialogVisible" :cabin="selectedCabin" @cabin-saved="list" />
             <CabinDetail v-model:isDialogVisible="isDetailCabinDialogVisible" :cabin="selectedCabin" />
 
             <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
@@ -113,10 +113,9 @@
 </template>
 
 <script setup>
-import AddCabin from '@/components/cabins/AddCabin.vue'
 import CabinDetail from '@/components/cabins/CabinDetail.vue'
-import EditCabin from '@/components/cabins/EditCabin.vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import CabinDialog from '@/components/cabins/CabinDialog.vue'
+import { computed, onMounted, ref } from 'vue'
 
 const headers = [
     { title: 'Cabin', key: 'name' },
@@ -124,7 +123,7 @@ const headers = [
     { title: 'Capacity', key: 'capacity' },
     { title: 'Beds', key: 'beds' },
     { title: 'Bathrooms', key: 'bathrooms' },
-    { title: 'Services', key: 'services' },
+    { title: 'features', key: 'features' },
     { title: 'Status', key: 'status' },
     { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ]
@@ -242,13 +241,4 @@ onMounted(() => {
     list()
 })
 
-watch(isAddCabinDialogVisible, visible => {
-    if (!visible)
-        list()
-})
-
-watch(isEditCabinDialogVisible, visible => {
-    if (!visible)
-        list()
-})
 </script>

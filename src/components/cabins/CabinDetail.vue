@@ -68,7 +68,8 @@ const getImageUrl = image => {
           {{ cabin.images.length }} photos
         </div>
       </div>
-      <div v-else class="cabin-no-image d-flex align-center justify-center bg-surface-variant" style="block-size:120px;">
+      <div v-else class="cabin-no-image d-flex align-center justify-center bg-surface-variant"
+        style="block-size:120px;">
         <VIcon icon="ri-image-line" size="40" class="opacity-30" />
       </div>
 
@@ -124,27 +125,21 @@ const getImageUrl = image => {
 
           <VDivider vertical class="d-none d-md-flex" />
 
-          <!-- Right column: services + images -->
+          <!-- Right column: features + images -->
           <VCol cols="12" md="4" class="ps-md-5">
-            <!-- Services -->
+            <!-- features -->
             <div class="mb-4">
               <div class="text-caption text-medium-emphasis text-uppercase font-weight-medium mb-2">
                 <VIcon icon="ri-star-line" size="13" class="me-1" />
-                Services ({{ cabin.services?.length || 0 }})
+                features ({{ cabin.features?.length || 0 }})
               </div>
-              <div v-if="cabin.services?.length" class="d-flex flex-wrap gap-2">
-                <VChip
-                  v-for="service in cabin.services"
-                  :key="service"
-                  size="small"
-                  variant="tonal"
-                  color="primary"
-                  label
-                >
-                  {{ service }}
+              <div v-if="cabin.features?.length" class="d-flex flex-wrap gap-2">
+                <VChip v-for="service in cabin.features" :key="service" size="small" variant="tonal" color="primary"
+                  label>
+                  {{ service.name }}
                 </VChip>
               </div>
-              <div v-else class="text-caption text-medium-emphasis">No services listed</div>
+              <div v-else class="text-caption text-medium-emphasis">No features listed</div>
             </div>
 
             <!-- Image thumbnails -->
@@ -153,16 +148,8 @@ const getImageUrl = image => {
                 <VIcon icon="ri-gallery-line" size="13" class="me-1" />Photos
               </div>
               <div class="d-flex flex-wrap gap-2">
-                <VImg
-                  v-for="img in cabin.images.slice(0, 6)"
-                  :key="img.id"
-                  :src="getImageUrl(img)"
-                  width="60"
-                  height="60"
-                  cover
-                  class="rounded thumbnail"
-                  :class="{ 'thumbnail-main': img.is_main }"
-                />
+                <VImg v-for="img in cabin.images.slice(0, 6)" :key="img.id" :src="getImageUrl(img)" width="60"
+                  height="60" cover class="rounded thumbnail" :class="{ 'thumbnail-main': img.is_main }" />
               </div>
             </div>
           </VCol>
