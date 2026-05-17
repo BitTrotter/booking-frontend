@@ -17,6 +17,9 @@
             <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddReservationDialogVisible = true">
               Create Reservation
             </VBtn>
+            <VBtn color="primary" prepend-icon="ri-refresh-line" @click="list">
+              refresh
+            </VBtn>
           </div>
         </div>
       </VCardText>
@@ -87,12 +90,8 @@
             </template>
 
             <template #item.payment_status="{ item }">
-              <VChip
-                v-if="paymentsMap[item.id]"
-                :color="getPaymentStatusColor(paymentsMap[item.id].status)"
-                size="small"
-                label
-              >
+              <VChip v-if="paymentsMap[item.id]" :color="getPaymentStatusColor(paymentsMap[item.id].status)"
+                size="small" label>
                 <VIcon :icon="getPaymentStatusIcon(paymentsMap[item.id].status)" size="14" class="me-1" />
                 {{ paymentsMap[item.id].status }}
               </VChip>
@@ -118,11 +117,8 @@
       <AddReservation v-model:isDialogVisible="isAddReservationDialogVisible" />
       <EditReservation v-model:isDialogVisible="isEditReservationDialogVisible" :reservation="selectedReservation"
         @reservation-updated="list" />
-      <ReservationDetail
-        v-model:isDialogVisible="isDetailDialogVisible"
-        :reservation="selectedReservation"
-        :payment="selectedReservation ? paymentsMap[selectedReservation.id] : null"
-      />
+      <ReservationDetail v-model:isDialogVisible="isDetailDialogVisible" :reservation="selectedReservation"
+        :payment="selectedReservation ? paymentsMap[selectedReservation.id] : null" />
     </VCard>
   </div>
 </template>

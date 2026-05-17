@@ -62,7 +62,7 @@
                         <template #item.name="{ item }">
                             <div>
                                 <div class="font-weight-medium">{{ item.name }}</div>
-                                <div class="text-body-2 text-medium-emphasis">{{ item.description }}</div>
+                                <div class="text-body-2 text-medium-emphasis text-truncate" style="max-width: 300px;" :title="item.description">{{ item.description }}</div>
                             </div>
                         </template>
 
@@ -102,7 +102,8 @@
             </VCardText>
 
             <CabinDialog v-model:isDialogVisible="isAddCabinDialogVisible" @cabin-saved="list" />
-            <CabinDialog v-model:isDialogVisible="isEditCabinDialogVisible" :cabin="selectedCabin" @cabin-saved="list" />
+            <CabinDialog v-model:isDialogVisible="isEditCabinDialogVisible" :cabin="selectedCabin"
+                @cabin-saved="list" />
             <CabinDetail v-model:isDialogVisible="isDetailCabinDialogVisible" :cabin="selectedCabin" />
 
             <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
