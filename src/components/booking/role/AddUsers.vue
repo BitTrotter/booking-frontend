@@ -13,8 +13,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:isDialogVisible'])
-const refForm = ref()
+
 const loading = ref(false)
+
 const snackBar = ref({
   visible: false,
   message: '',
@@ -34,6 +35,7 @@ const normalizeRoles = roles =>
     .map(role => {
       if (typeof role === 'string')
         return role
+
       return role?.name || ''
     })
     .filter(Boolean)
@@ -46,28 +48,24 @@ const resetForm = () => {
   confirmPassword.value = ''
   selectedRoles.value = []
   isActive.value = true
-  refForm.value?.resetValidation()
 }
 
 const dialogVisibleUpdate = val => {
   emit('update:isDialogVisible', val)
-  if (!val)
-    resetForm()
+  if (!val) resetForm()
 }
 
 const validatePasswords = () => {
   if (password.value !== confirmPassword.value)
     return 'Passwords do not match'
+
   return true
 }
 
 const saveUser = async () => {
-  const validation = await refForm.value?.validate()
-  if (!validation?.valid)
-    return
-
   if (password.value !== confirmPassword.value) {
     snackBar.value = { visible: true, message: 'Passwords do not match', color: 'error' }
+
     return
   }
 
@@ -83,7 +81,7 @@ const saveUser = async () => {
       is_active: isActive.value,
     }
 
-    const resp = await $api('/users', {
+    await $api('/users', {
       method: 'POST',
       body: payload,
       onResponseError: ({ response }) => {
@@ -104,126 +102,127 @@ const saveUser = async () => {
 </script>
 
 <template>
-  <VDialog :model-value="props.isDialogVisible" max-width="500" @update:model-value="dialogVisibleUpdate">
-    <VCard>
-      <VCardTitle class="text-h5 font-weight-bold mb-2">Add New User</VCardTitle>
-      <VDivider />
+  <AppFormDialog
+    :model-value="props.isDialogVisible"
+    title="Add New User"
+    :max-width="500"
+    submit-text="Create User"
+    validate-on-submit
+    :loading="loading"
+    content-class="pa-6"
+    @update:model-value="dialogVisibleUpdate"
+    @submit="saveUser"
+  >
+    <VRow>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="firstName"
+          label="Full Name"
+          placeholder="John Doe"
+          prepend-inner-icon="ri-user-line"
+          :rules="[v => !!v || 'Name is required']"
+          required
+        />
+      </VCol>
 
-      <VCardText class="pa-6">
-        <VForm ref="refForm">
-          <VRow>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="firstName"
-                label="Full Name"
-                placeholder="John Doe"
-                prepend-inner-icon="ri-user-line"
-                :rules="[v => !!v || 'Name is required']"
-                required
-              />
-            </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VSelect
+          v-model="isActive"
+          :items="[
+            { title: 'Active', value: true },
+            { title: 'Inactive', value: false }
+          ]"
+          label="Status"
+          prepend-inner-icon="ri-shield-check-line"
+        />
+      </VCol>
 
-            <VCol cols="12" md="6">
-              <VSelect
-                v-model="isActive"
-                :items="[
-                  { title: 'Active', value: true },
-                  { title: 'Inactive', value: false }
-                ]"
-                label="Status"
-                prepend-inner-icon="ri-shield-check-line"
-              />
-            </VCol>
+      <VCol cols="12">
+        <VTextField
+          v-model="email"
+          label="Email"
+          placeholder="john@example.com"
+          prepend-inner-icon="ri-mail-line"
+          type="email"
+          :rules="[
+            v => !!v || 'Email is required',
+            v => /.+@.+\..+/.test(v) || 'Email must be valid'
+          ]"
+          required
+        />
+      </VCol>
 
-            <VCol cols="12">
-              <VTextField
-                v-model="email"
-                label="Email"
-                placeholder="john@example.com"
-                prepend-inner-icon="ri-mail-line"
-                type="email"
-                :rules="[
-                  v => !!v || 'Email is required',
-                  v => /.+@.+\..+/.test(v) || 'Email must be valid'
-                ]"
-                required
-              />
-            </VCol>
+      <VCol cols="12">
+        <VTextField
+          v-model="mobile"
+          label="Mobile Number"
+          placeholder="+1 (555) 123-4567"
+          prepend-inner-icon="ri-phone-line"
+          :rules="[v => !!v || 'Mobile is required']"
+          required
+        />
+      </VCol>
 
-            <VCol cols="12">
-              <VTextField
-                v-model="mobile"
-                label="Mobile Number"
-                placeholder="+1 (555) 123-4567"
-                prepend-inner-icon="ri-phone-line"
-                :rules="[v => !!v || 'Mobile is required']"
-                required
-              />
-            </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="password"
+          label="Password"
+          placeholder="••••••••"
+          prepend-inner-icon="ri-lock-line"
+          type="password"
+          :rules="[v => !!v || 'Password is required']"
+          required
+        />
+      </VCol>
 
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="password"
-                label="Password"
-                placeholder="••••••••"
-                prepend-inner-icon="ri-lock-line"
-                type="password"
-                :rules="[v => !!v || 'Password is required']"
-                required
-              />
-            </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="confirmPassword"
+          label="Confirm Password"
+          placeholder="••••••••"
+          prepend-inner-icon="ri-lock-line"
+          type="password"
+          :rules="[
+            v => !!v || 'Confirm password is required',
+            () => validatePasswords()
+          ]"
+          required
+        />
+      </VCol>
 
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="confirmPassword"
-                label="Confirm Password"
-                placeholder="••••••••"
-                prepend-inner-icon="ri-lock-line"
-                type="password"
-                :rules="[
-                  v => !!v || 'Confirm password is required',
-                  () => validatePasswords()
-                ]"
-                required
-              />
-            </VCol>
+      <VCol cols="12">
+        <VSelect
+          v-model="selectedRoles"
+          :items="props.roles"
+          item-title="name"
+          item-value="name"
+          label="Assign Roles"
+          prepend-inner-icon="ri-shield-user-line"
+          multiple
+          chips
+          clearable
+        />
+      </VCol>
+    </VRow>
+  </AppFormDialog>
 
-            <VCol cols="12">
-              <VSelect
-                v-model="selectedRoles"
-                :items="props.roles"
-                item-title="name"
-                item-value="name"
-                label="Assign Roles"
-                prepend-inner-icon="ri-shield-user-line"
-                multiple
-                chips
-                clearable
-              />
-            </VCol>
-          </VRow>
-        </VForm>
-      </VCardText>
-
-      <VDivider />
-
-      <VCardText class="d-flex gap-3 pa-6">
-        <VBtn
-          color="primary"
-          :loading="loading"
-          @click="saveUser"
-        >
-          Create User
-        </VBtn>
-        <VBtn color="secondary" variant="tonal" @click="dialogVisibleUpdate(false)">
-          Cancel
-        </VBtn>
-      </VCardText>
-
-      <VSnackbar v-model="snackBar.visible" location="top" :color="snackBar.color">
-        {{ snackBar.message }}
-      </VSnackbar>
-    </VCard>
-  </VDialog>
+  <VSnackbar
+    v-model="snackBar.visible"
+    location="top"
+    :color="snackBar.color"
+  >
+    {{ snackBar.message }}
+  </VSnackbar>
 </template>
-

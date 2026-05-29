@@ -1,6 +1,6 @@
 <script setup>
 import { $api } from '@/utils/api'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const emit = defineEmits(['update:isDialogVisible', 'reservation-created'])
 
@@ -81,7 +81,7 @@ const removeGuest = index => {
   guests.value.splice(index, 1)
 }
 
-const canSubmit = () => {
+const canSubmit = computed(() => {
   if (!selectedCabinId.value || !startDate.value || !endDate.value || !phone.value.trim() || !email.value.trim())
     return false
 
@@ -89,12 +89,12 @@ const canSubmit = () => {
     return false
 
   return guests.value.every(guest => guest.full_name?.trim() && ['adult', 'child'].includes(guest.guest_type))
-}
+})
 
 const submitReservation = async () => {
   errorMessage.value = ''
 
-  if (!canSubmit()) {
+  if (!canSubmit.value) {
     errorMessage.value = 'Please complete cabin, dates, and valid guests.'
     return
   }
@@ -159,76 +159,141 @@ watch(() => props.initialReservation, initialReservation => {
 </script>
 
 <template>
-  <VDialog :model-value="props.isDialogVisible" max-width="800" @update:model-value="dialogVisibleUpdate">
-    <VCard class="pa-4 pa-sm-8">
-      <DialogCloseBtn variant="text" size="default" @click="emit('update:isDialogVisible', false)" />
+  <AppFormDialog
+    :model-value="props.isDialogVisible"
+    title="Add Reservation"
+    subtitle="Select cabin, dates and guests to create a new reservation."
+    :max-width="800"
+    submit-text="Create reservation"
+    :loading="isSubmitting"
+    :can-submit="canSubmit"
+    @update:model-value="dialogVisibleUpdate"
+    @submit="submitReservation"
+  >
+    <VRow>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VSelect
+          v-model="selectedCabinId"
+          :items="cabinItems"
+          item-title="name"
+          item-value="id"
+          label="Cabin"
+          placeholder="Select cabin"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppDateTimePicker
+          v-model="startDate"
+          label="Start date"
+          placeholder="YYYY-MM-DD"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppDateTimePicker
+          v-model="endDate"
+          label="End date"
+          placeholder="YYYY-MM-DD"
+        />
+      </VCol>
+    </VRow>
 
-      <VCardTitle class="px-0 pb-2">
-        Add Reservation
-      </VCardTitle>
-      <VCardSubtitle class="px-0 pb-6">
-        Select cabin, dates and guests to create a new reservation.
-      </VCardSubtitle>
+    <VRow>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="phone"
+          label="Phone"
+          placeholder="Guest phone number"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="email"
+          label="Email"
+          placeholder="Guest email address"
+        />
+      </VCol>
+    </VRow>
 
-      <VRow>
-        <VCol cols="12" md="6">
-          <VSelect v-model="selectedCabinId" :items="cabinItems" item-title="name" item-value="id" label="Cabin"
-            placeholder="Select cabin" />
-        </VCol>
-        <VCol cols="12" md="3">
-          <AppDateTimePicker v-model="startDate" label="Start date" placeholder="YYYY-MM-DD" />
-        </VCol>
-        <VCol cols="12" md="3">
-          <AppDateTimePicker v-model="endDate" label="End date" placeholder="YYYY-MM-DD" />
-        </VCol>
-      </VRow>
-      <VRow>
-        <VCol cols="12" md="6">
-          <VTextField v-model="phone" label="Phone" placeholder="Guest phone number" />
-        </VCol>
-        <VCol cols="12" md="6">
-          <VTextField v-model="email" label="Email" placeholder="Guest email address" />
-        </VCol>
-      </VRow>
+    <VCard
+      variant="tonal"
+      class="mt-2"
+    >
+      <VCardText class="pa-4">
+        <div class="d-flex align-center justify-space-between mb-4">
+          <span class="text-subtitle-1 font-weight-medium">Guests</span>
+          <VBtn
+            size="small"
+            variant="outlined"
+            prepend-icon="ri-user-add-line"
+            @click="addGuest"
+          >
+            Add guest
+          </VBtn>
+        </div>
 
-
-      <VCard variant="tonal" class="mt-2">
-        <VCardText class="pa-4">
-          <div class="d-flex align-center justify-space-between mb-4">
-            <span class="text-subtitle-1 font-weight-medium">Guests</span>
-            <VBtn size="small" variant="outlined" prepend-icon="ri-user-add-line" @click="addGuest">
-              Add guest
-            </VBtn>
-          </div>
-
-          <VRow v-for="(guest, index) in guests" :key="index" class="align-center">
-            <VCol cols="12" md="7">
-              <VTextField v-model="guest.full_name" label="Full name" placeholder="Guest full name" />
-            </VCol>
-            <VCol cols="9" md="4">
-              <VSelect v-model="guest.guest_type" :items="['adult', 'child']" label="Type" />
-            </VCol>
-            <VCol cols="3" md="1" class="text-end">
-              <IconBtn :disabled="guests.length === 1" @click="removeGuest(index)">
-                <VIcon icon="ri-delete-bin-7-line" />
-              </IconBtn>
-            </VCol>
-          </VRow>
-        </VCardText>
-      </VCard>
-
-      <VAlert v-if="errorMessage" type="error" variant="tonal" class="mt-4">
-        {{ errorMessage }}
-      </VAlert>
-
-      <div class="d-flex justify-end gap-3 mt-6">
-        <VBtn variant="outlined" color="secondary" @click="dialogVisibleUpdate(false)">
-          Cancel
-        </VBtn>
-        <VBtn color="primary" :loading="isSubmitting" :disabled="!canSubmit()" @click="submitReservation">
-          Create reservation
-        </VBtn>
-      </div>
+        <VRow
+          v-for="(guest, index) in guests"
+          :key="index"
+          class="align-center"
+        >
+          <VCol
+            cols="12"
+            md="7"
+          >
+            <VTextField
+              v-model="guest.full_name"
+              label="Full name"
+              placeholder="Guest full name"
+            />
+          </VCol>
+          <VCol
+            cols="9"
+            md="4"
+          >
+            <VSelect
+              v-model="guest.guest_type"
+              :items="['adult', 'child']"
+              label="Type"
+            />
+          </VCol>
+          <VCol
+            cols="3"
+            md="1"
+            class="text-end"
+          >
+            <IconBtn
+              :disabled="guests.length === 1"
+              @click="removeGuest(index)"
+            >
+              <VIcon icon="ri-delete-bin-7-line" />
+            </IconBtn>
+          </VCol>
+        </VRow>
+      </VCardText>
     </VCard>
-  </VDialog>
+
+    <VAlert
+      v-if="errorMessage"
+      type="error"
+      variant="tonal"
+      class="mt-4"
+    >
+      {{ errorMessage }}
+    </VAlert>
+  </AppFormDialog>
 </template>

@@ -16,7 +16,6 @@ const props = defineProps({
   },
 })
 
-const refForm = ref()
 const cabinItems = ref([])
 const selectedCabinId = ref(null)
 const startDate = ref(null)
@@ -104,8 +103,7 @@ const canSubmit = computed(() => {
 const submitReservation = async () => {
   errorMessage.value = ''
 
-  const validation = await refForm.value?.validate()
-  if (!validation?.valid || !canSubmit.value) {
+  if (!canSubmit.value) {
     errorMessage.value = 'Please complete cabin, dates, status, and valid guests.'
     return
   }
@@ -196,124 +194,169 @@ watch(() => props.reservation, reservation => {
 </script>
 
 <template>
-  <VDialog :model-value="props.isDialogVisible" max-width="860" @update:model-value="dialogVisibleUpdate">
-    <VCard class="pa-4 pa-sm-8">
-      <DialogCloseBtn variant="text" size="default" @click="emit('update:isDialogVisible', false)" />
+  <AppFormDialog
+    :model-value="props.isDialogVisible"
+    title="Edit Reservation"
+    subtitle="Update the cabin, stay dates, reservation status, and guest list."
+    :max-width="860"
+    submit-text="Save changes"
+    delete-text="Delete reservation"
+    show-delete
+    validate-on-submit
+    :loading="isSubmitting"
+    :delete-loading="isDeleting"
+    :can-submit="canSubmit"
+    @update:model-value="dialogVisibleUpdate"
+    @submit="submitReservation"
+    @delete="deleteReservation"
+  >
+    <VRow>
+      <VCol
+        cols="12"
+        md="5"
+      >
+        <VSelect
+          v-model="selectedCabinId"
+          :items="cabinItems"
+          item-title="name"
+          item-value="id"
+          label="Cabin"
+          placeholder="Select cabin"
+          :rules="[requiredValidator]"
+          required
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppDateTimePicker
+          v-model="startDate"
+          label="Start date"
+          placeholder="YYYY-MM-DD"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppDateTimePicker
+          v-model="endDate"
+          label="End date"
+          placeholder="YYYY-MM-DD"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="1"
+      >
+        <VSelect
+          v-model="status"
+          :items="statusItems"
+          label="Status"
+          :rules="[requiredValidator]"
+          required
+        />
+      </VCol>
+    </VRow>
 
-      <VCardTitle class="px-0 pb-2">
-        Edit Reservation
-      </VCardTitle>
-      <VCardSubtitle class="px-0 pb-6">
-        Update the cabin, stay dates, reservation status, and guest list.
-      </VCardSubtitle>
+    <VRow class="mt-0">
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="phone"
+          label="Phone"
+          placeholder="Guest phone number"
+          prepend-inner-icon="ri-phone-line"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="email"
+          label="Email"
+          placeholder="Guest email address"
+          prepend-inner-icon="ri-mail-line"
+          type="email"
+        />
+      </VCol>
+    </VRow>
 
-      <VForm ref="refForm">
-        <VRow>
-          <VCol cols="12" md="5">
-            <VSelect
-              v-model="selectedCabinId"
-              :items="cabinItems"
-              item-title="name"
-              item-value="id"
-              label="Cabin"
-              placeholder="Select cabin"
-              :rules="[requiredValidator]"
-              required
-            />
-          </VCol>
-          <VCol cols="12" md="3">
-            <AppDateTimePicker v-model="startDate" label="Start date" placeholder="YYYY-MM-DD" :rules="[requiredValidator]" />
-          </VCol>
-          <VCol cols="12" md="3">
-            <AppDateTimePicker v-model="endDate" label="End date" placeholder="YYYY-MM-DD" :rules="[requiredValidator]" />
-          </VCol>
-          <VCol cols="12" md="1">
-            <VSelect
-              v-model="status"
-              :items="statusItems"
-              label="Status"
-              :rules="[requiredValidator]"
-              required
-            />
-          </VCol>
-        </VRow>
-
-        <VRow class="mt-0">
-          <VCol cols="12" md="6">
-            <VTextField
-              v-model="phone"
-              label="Phone"
-              placeholder="Guest phone number"
-              prepend-inner-icon="ri-phone-line"
-            />
-          </VCol>
-          <VCol cols="12" md="6">
-            <VTextField
-              v-model="email"
-              label="Email"
-              placeholder="Guest email address"
-              prepend-inner-icon="ri-mail-line"
-              type="email"
-            />
-          </VCol>
-        </VRow>
-
-        <VCard variant="tonal" class="mt-2">
-          <VCardText class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-4">
-              <span class="text-subtitle-1 font-weight-medium">Guests</span>
-              <VBtn size="small" variant="outlined" prepend-icon="ri-user-add-line" @click="addGuest">
-                Add guest
-              </VBtn>
-            </div>
-
-            <VRow v-for="(guest, index) in guests" :key="index" class="align-center">
-              <VCol cols="12" md="7">
-                <VTextField
-                  v-model="guest.full_name"
-                  label="Full name"
-                  placeholder="Guest full name"
-                  :rules="[requiredValidator]"
-                  required
-                />
-              </VCol>
-              <VCol cols="9" md="4">
-                <VSelect
-                  v-model="guest.guest_type"
-                  :items="['adult', 'child']"
-                  label="Type"
-                  :rules="[requiredValidator]"
-                  required
-                />
-              </VCol>
-              <VCol cols="3" md="1" class="text-end">
-                <IconBtn :disabled="guests.length === 1" @click="removeGuest(index)">
-                  <VIcon icon="ri-delete-bin-7-line" />
-                </IconBtn>
-              </VCol>
-            </VRow>
-          </VCardText>
-        </VCard>
-      </VForm>
-
-      <VAlert v-if="errorMessage" type="error" variant="tonal" class="mt-4">
-        {{ errorMessage }}
-      </VAlert>
-
-      <div class="d-flex justify-space-between align-center gap-3 mt-6 flex-wrap">
-        <VBtn color="error" variant="tonal" :loading="isDeleting" @click="deleteReservation">
-          Delete reservation
-        </VBtn>
-
-        <div class="d-flex justify-end gap-3 flex-wrap">
-          <VBtn variant="outlined" color="secondary" @click="dialogVisibleUpdate(false)">
-            Cancel
-          </VBtn>
-          <VBtn color="primary" :loading="isSubmitting" :disabled="!canSubmit" @click="submitReservation">
-            Save changes
+    <VCard
+      variant="tonal"
+      class="mt-2"
+    >
+      <VCardText class="pa-4">
+        <div class="d-flex align-center justify-space-between mb-4">
+          <span class="text-subtitle-1 font-weight-medium">Guests</span>
+          <VBtn
+            size="small"
+            variant="outlined"
+            prepend-icon="ri-user-add-line"
+            @click="addGuest"
+          >
+            Add guest
           </VBtn>
         </div>
-      </div>
+
+        <VRow
+          v-for="(guest, index) in guests"
+          :key="index"
+          class="align-center"
+        >
+          <VCol
+            cols="12"
+            md="7"
+          >
+            <VTextField
+              v-model="guest.full_name"
+              label="Full name"
+              placeholder="Guest full name"
+              :rules="[requiredValidator]"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="9"
+            md="4"
+          >
+            <VSelect
+              v-model="guest.guest_type"
+              :items="['adult', 'child']"
+              label="Type"
+              :rules="[requiredValidator]"
+              required
+            />
+          </VCol>
+          <VCol
+            cols="3"
+            md="1"
+            class="text-end"
+          >
+            <IconBtn
+              :disabled="guests.length === 1"
+              @click="removeGuest(index)"
+            >
+              <VIcon icon="ri-delete-bin-7-line" />
+            </IconBtn>
+          </VCol>
+        </VRow>
+      </VCardText>
     </VCard>
-  </VDialog>
+
+    <VAlert
+      v-if="errorMessage"
+      type="error"
+      variant="tonal"
+      class="mt-4"
+    >
+      {{ errorMessage }}
+    </VAlert>
+  </AppFormDialog>
 </template>

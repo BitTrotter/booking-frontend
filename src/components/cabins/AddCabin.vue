@@ -2,8 +2,6 @@
 import { ref, watch } from 'vue'
 import { requiredValidator } from '@/@core/utils/validators'
 
-const emit = defineEmits(['update:isDialogVisible', 'cabin-created'])
-
 const props = defineProps({
   isDialogVisible: {
     type: Boolean,
@@ -11,7 +9,8 @@ const props = defineProps({
   },
 })
 
-const refForm = ref()
+const emit = defineEmits(['update:isDialogVisible', 'cabin-created'])
+
 const name = ref('')
 const description = ref('')
 const price_per_night = ref(null)
@@ -43,6 +42,7 @@ const loadFeatures = async () => {
   loadingFeatures.value = true
   try {
     const resp = await $api('/features', { method: 'GET' })
+
     featureList.value = resp.data ?? resp
   } catch (error) {
     console.error('Error loading features:', error)
@@ -59,7 +59,9 @@ const createFeature = async () => {
       method: 'POST',
       body: { name: newFeatureName.value.trim() },
     })
+
     const feature = resp.data ?? resp
+
     featureList.value.push(feature)
     selectedFeatures.value.push(feature.id)
     newFeatureName.value = ''
@@ -72,9 +74,6 @@ const createFeature = async () => {
 }
 
 const submitCabin = async () => {
-  const validation = await refForm.value?.validate()
-  if (!validation?.valid) return
-
   submitting.value = true
 
   const payload = {
@@ -129,7 +128,6 @@ const resetForm = () => {
   status.value = 'available'
   showNewFeatureForm.value = false
   newFeatureName.value = ''
-  refForm.value?.reset()
 }
 
 watch(() => props.isDialogVisible, val => {
@@ -139,220 +137,234 @@ watch(() => props.isDialogVisible, val => {
 </script>
 
 <template>
-  <VDialog :model-value="props.isDialogVisible" max-width="700" scrollable @update:model-value="dialogVisibleUpdate">
-    <VCard flat>
+  <AppFormDialog
+    :model-value="props.isDialogVisible"
+    title="New Cabin"
+    subtitle="Fill in the details to register a new cabin"
+    :max-width="700"
+    submit-text="Save Cabin"
+    submit-icon="ri-save-line"
+    validate-on-submit
+    flat
+    :loading="submitting"
+    @update:model-value="dialogVisibleUpdate"
+    @submit="submitCabin"
+  >
+    <!-- General Information -->
+    <div class="d-flex align-center gap-2 mb-4">
+      <VIcon
+        size="18"
+        color="primary"
+      >
+        ri-information-line
+      </VIcon>
+      <span class="text-subtitle-1 font-weight-semibold">General Information</span>
+    </div>
 
-      <!-- Header -->
-      <VCardText class="d-flex justify-space-between align-center px-6 py-4">
-        <div>
-          <div class="text-h5 font-weight-bold">New Cabin</div>
-          <div class="text-body-2 text-medium-emphasis mt-1">Fill in the details to register a new cabin</div>
-        </div>
-        <VBtn icon variant="text" size="small" @click="dialogVisibleUpdate(false)">
-          <VIcon>ri-close-line</VIcon>
-        </VBtn>
-      </VCardText>
+    <VRow>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="name"
+          label="Cabin Name"
+          placeholder="Las Palmas Cabin"
+          prepend-inner-icon="ri-home-3-line"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VSelect
+          v-model="status"
+          :items="statusItems"
+          label="Status"
+          prepend-inner-icon="ri-toggle-line"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+      <VCol cols="12">
+        <VTextarea
+          v-model="description"
+          label="Description"
+          placeholder="Brief description of the cabin..."
+          rows="3"
+          auto-grow
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+    </VRow>
 
-      <VDivider />
+    <VDivider class="my-5" />
 
-      <VCardText class="px-6 py-5">
-        <VForm ref="refForm">
+    <!-- Details -->
+    <div class="d-flex align-center gap-2 mb-4">
+      <VIcon
+        size="18"
+        color="primary"
+      >
+        ri-hotel-bed-line
+      </VIcon>
+      <span class="text-subtitle-1 font-weight-semibold">Details</span>
+    </div>
 
-          <!-- General Information -->
-          <div class="d-flex align-center gap-2 mb-4">
-            <VIcon size="18" color="primary">ri-information-line</VIcon>
-            <span class="text-subtitle-1 font-weight-semibold">General Information</span>
+    <VRow>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="price_per_night"
+          type="number"
+          label="Price per Night"
+          placeholder="1500"
+          prefix="$"
+          min="0"
+          prepend-inner-icon="ri-money-dollar-circle-line"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="capacity"
+          type="number"
+          label="Guest Capacity"
+          placeholder="4"
+          min="1"
+          prepend-inner-icon="ri-group-line"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="beds"
+          type="number"
+          label="Number of Beds"
+          placeholder="2"
+          min="1"
+          prepend-inner-icon="ri-hotel-bed-line"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <VTextField
+          v-model="bathrooms"
+          type="number"
+          label="Number of Bathrooms"
+          placeholder="1"
+          min="1"
+          prepend-inner-icon="ri-drop-line"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+    </VRow>
+
+    <VDivider class="my-5" />
+
+    <!-- Amenities & Features -->
+    <div class="d-flex justify-space-between align-center mb-4">
+      <div class="d-flex align-center gap-2">
+        <VIcon
+          size="18"
+          color="primary"
+        >
+          ri-star-line
+        </VIcon>
+        <span class="text-subtitle-1 font-weight-semibold">Amenities & Features</span>
+      </div>
+      <VBtn
+        size="small"
+        variant="tonal"
+        prepend-icon="ri-add-line"
+        @click="showNewFeatureForm = !showNewFeatureForm"
+      >
+        New Feature
+      </VBtn>
+    </div>
+
+    <VExpandTransition>
+      <div
+        v-if="showNewFeatureForm"
+        class="mb-4"
+      >
+        <VCard
+          variant="outlined"
+          class="pa-4 rounded-lg"
+        >
+          <div class="text-body-2 font-weight-medium mb-3 text-medium-emphasis">
+            Create and auto-select a new feature
           </div>
-
-          <VRow>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="name"
-                label="Cabin Name"
-                placeholder="Las Palmas Cabin"
-                prepend-inner-icon="ri-home-3-line"
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-            <VCol cols="12" md="6">
-              <VSelect
-                v-model="status"
-                :items="statusItems"
-                label="Status"
-                prepend-inner-icon="ri-toggle-line"
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-            <VCol cols="12">
-              <VTextarea
-                v-model="description"
-                label="Description"
-                placeholder="Brief description of the cabin..."
-                rows="3"
-                auto-grow
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-          </VRow>
-
-          <VDivider class="my-5" />
-
-          <!-- Details -->
-          <div class="d-flex align-center gap-2 mb-4">
-            <VIcon size="18" color="primary">ri-hotel-bed-line</VIcon>
-            <span class="text-subtitle-1 font-weight-semibold">Details</span>
-          </div>
-
-          <VRow>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="price_per_night"
-                type="number"
-                label="Price per Night"
-                placeholder="1500"
-                prefix="$"
-                min="0"
-                prepend-inner-icon="ri-money-dollar-circle-line"
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="capacity"
-                type="number"
-                label="Guest Capacity"
-                placeholder="4"
-                min="1"
-                prepend-inner-icon="ri-group-line"
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="beds"
-                type="number"
-                label="Number of Beds"
-                placeholder="2"
-                min="1"
-                prepend-inner-icon="ri-hotel-bed-line"
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-            <VCol cols="12" md="6">
-              <VTextField
-                v-model="bathrooms"
-                type="number"
-                label="Number of Bathrooms"
-                placeholder="1"
-                min="1"
-                prepend-inner-icon="ri-drop-line"
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-          </VRow>
-
-          <VDivider class="my-5" />
-
-          <!-- Amenities & Features -->
-          <div class="d-flex justify-space-between align-center mb-4">
-            <div class="d-flex align-center gap-2">
-              <VIcon size="18" color="primary">ri-star-line</VIcon>
-              <span class="text-subtitle-1 font-weight-semibold">Amenities & Features</span>
-            </div>
+          <div class="d-flex gap-3 align-start">
+            <VTextField
+              v-model="newFeatureName"
+              label="Feature name"
+              placeholder="e.g. Fireplace"
+              density="compact"
+              hide-details
+              class="flex-grow-1"
+              @keyup.enter="createFeature"
+            />
             <VBtn
-              size="small"
+              color="primary"
               variant="tonal"
-              prepend-icon="ri-add-line"
-              @click="showNewFeatureForm = !showNewFeatureForm"
+              size="small"
+              :loading="creatingFeature"
+              class="mt-1"
+              @click="createFeature"
             >
-              New Feature
+              Create
+            </VBtn>
+            <VBtn
+              variant="text"
+              size="small"
+              class="mt-1"
+              @click="showNewFeatureForm = false; newFeatureName = ''"
+            >
+              Cancel
             </VBtn>
           </div>
+        </VCard>
+      </div>
+    </VExpandTransition>
 
-          <VExpandTransition>
-            <div v-if="showNewFeatureForm" class="mb-4">
-              <VCard variant="outlined" class="pa-4 rounded-lg">
-                <div class="text-body-2 font-weight-medium mb-3 text-medium-emphasis">
-                  Create and auto-select a new feature
-                </div>
-                <div class="d-flex gap-3 align-start">
-                  <VTextField
-                    v-model="newFeatureName"
-                    label="Feature name"
-                    placeholder="e.g. Fireplace"
-                    density="compact"
-                    hide-details
-                    class="flex-grow-1"
-                    @keyup.enter="createFeature"
-                  />
-                  <VBtn
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                    :loading="creatingFeature"
-                    class="mt-1"
-                    @click="createFeature"
-                  >
-                    Create
-                  </VBtn>
-                  <VBtn
-                    variant="text"
-                    size="small"
-                    class="mt-1"
-                    @click="showNewFeatureForm = false; newFeatureName = ''"
-                  >
-                    Cancel
-                  </VBtn>
-                </div>
-              </VCard>
-            </div>
-          </VExpandTransition>
+    <div
+      v-if="loadingFeatures"
+      class="d-flex justify-center py-5"
+    >
+      <VProgressCircular
+        indeterminate
+        color="primary"
+        size="32"
+      />
+    </div>
 
-          <div v-if="loadingFeatures" class="d-flex justify-center py-5">
-            <VProgressCircular indeterminate color="primary" size="32" />
-          </div>
-
-          <VRow v-else>
-            <VCol cols="12">
-              <VSelect
-                v-model="selectedFeatures"
-                :items="featureList.map(f => ({ title: f.name, value: f.id }))"
-                multiple
-                chips
-                closable-chips
-                clearable
-                label="Select amenities"
-                prepend-inner-icon="ri-apps-line"
-                no-data-text="No features available. Create one above."
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-          </VRow>
-
-        </VForm>
-      </VCardText>
-
-      <VDivider />
-
-      <!-- Actions -->
-      <VCardText class="d-flex gap-3 pa-4">
-        <VBtn
-          color="primary"
-          :loading="submitting"
-          prepend-icon="ri-save-line"
-          @click="submitCabin"
-        >
-          Save Cabin
-        </VBtn>
-        <VBtn
-          color="secondary"
-          variant="tonal"
-          @click="dialogVisibleUpdate(false)"
-        >
-          Cancel
-        </VBtn>
-      </VCardText>
-
-    </VCard>
-  </VDialog>
+    <VRow v-else>
+      <VCol cols="12">
+        <VSelect
+          v-model="selectedFeatures"
+          :items="featureList.map(f => ({ title: f.name, value: f.id }))"
+          multiple
+          chips
+          closable-chips
+          clearable
+          label="Select amenities"
+          prepend-inner-icon="ri-apps-line"
+          no-data-text="No features available. Create one above."
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+    </VRow>
+  </AppFormDialog>
 </template>
