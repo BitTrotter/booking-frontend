@@ -12,7 +12,7 @@ import { themeConfig } from '@themeConfig'
 import { set } from '@vueuse/core'
 
 const error_login = ref(false)
-const isLoading = ref (false)
+const isLoading = ref(false)
 const succes_login = ref(false)
 const route = useRoute()
 const router = useRouter()
@@ -30,14 +30,9 @@ definePage({
 })
 
 
-const setf = () => {
-form.value.email = 'ultraroot@gmail.com'
-form.value.password = '12345678'
-}
-
 const login = async () => {
   try {
-    isLoading.value= true
+    isLoading.value = true
     error_login.value = false
     const resp = await $api('auth/login', {
       method: 'POST',
@@ -52,20 +47,20 @@ const login = async () => {
     })
     succes_login.value = true
 
-    
+
     localStorage.setItem('userData', JSON.stringify(resp.user));
     localStorage.setItem('accessToken', resp.access_token);
 
     // await nextTick(async()=>{
     //  await setTimeout(()=>{
-        router.replace(route.query.to ? String(route.query.to): '/')
-        
+    router.replace(route.query.to ? String(route.query.to) : '/')
+
     //   }, 2000)
 
     // })
     // navigateTo('/')
   } catch (error) {
-    isLoading.value= false
+    isLoading.value = false
     error_login.value = true
     succes_login.value = true
     console.error('Login failed:', error)
@@ -85,8 +80,10 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
 <template>
   <RouterLink to="/">
     <div class="app-logo auth-logo">
-        <img  src="https://cdn.prod.website-files.com/68c9ad8cc3947459a003d444/68ec6c2d28c92e25c293ecb3_67360c883c0ba3f1d85cbb20cc2f1c80_logo%23a68a64.png" class="auth-illustration " style="width:60px" alt="auth-illustration">
-      <img >
+      <img
+        src="https://cdn.prod.website-files.com/68c9ad8cc3947459a003d444/68ec6c2d28c92e25c293ecb3_67360c883c0ba3f1d85cbb20cc2f1c80_logo%23a68a64.png"
+        class="auth-illustration " style="width:60px" alt="auth-illustration">
+      <img>
       <h1 class="app-logo-title">
         {{ themeConfig.app.title }}
       </h1>
@@ -96,10 +93,12 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
   <VRow no-gutters class="auth-wrapper">
     <VCol md="8" class="d-none d-md-flex align-center justify-center position-relative">
       <div class="d-flex align-center justify-center pa-10">
-         <h1 class="app-logo-title">
-        Rocky Cabbins
-      </h1>
-        <img src="https://cdn.prod.website-files.com/68c9ad8cc3947459a003d444/68ec6c2d28c92e25c293ecb3_67360c883c0ba3f1d85cbb20cc2f1c80_logo%23a68a64.png" class="auth-illustration w-100" alt="auth-illustration">
+        <h1 class="app-logo-title">
+          Rocky Cabbins
+        </h1>
+        <img
+          src="https://cdn.prod.website-files.com/68c9ad8cc3947459a003d444/68ec6c2d28c92e25c293ecb3_67360c883c0ba3f1d85cbb20cc2f1c80_logo%23a68a64.png"
+          class="auth-illustration w-100" alt="auth-illustration">
       </div>
       <VImg :src="authV2LoginMask" class="d-none d-md-flex auth-footer-mask" alt="auth-mask" />
     </VCol>
@@ -112,7 +111,7 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
           </h4>
 
           <p class="mb-0">
-            Please sign-in 
+            Please sign-in
           </p>
         </VCardText>
 
@@ -121,7 +120,7 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
             <VRow>
               <!-- email -->
               <VCol cols="12">
-                <VTextField v-model="form.email" autofocus label="Email" type="email" placeholder="johndoe@email.com"  />
+                <VTextField v-model="form.email" autofocus label="Email" type="email" placeholder="johndoe@email.com" />
               </VCol>
 
 
@@ -129,7 +128,7 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
               <VCol cols="12">
                 <!-- <VTextField v-model="form.password" label="Password" placeholder="············" -->
                 <VTextField v-model="form.password" label="Password" placeholder="············"
-                :type="isPasswordVisible ? 'text' : 'password'"
+                  :type="isPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isPasswordVisible ? 'ri-eye-off-line' : 'ri-eye-line'"
                   @click:append-inner="isPasswordVisible = !isPasswordVisible" />
                 <VAlert class="mt-2" title="Alert" type="error" closable v-if="error_login">
@@ -146,27 +145,18 @@ const authV2LoginIllustration = useGenerateImageVariant(authV2LoginIllustrationL
                   </a>
                 </div>
 
-                <!-- login button -->
-                <VBtn block  @click="setf()" class="mb-4">
-                  set
-                </VBtn>
                 <VBtn block type="submit">
                   <span v-if="!isLoading">
                     Login
                   </span>
-                    <VProgressCircular
-                        :size="20"
-                        color="red"
-                        indeterminate
-                        v-if="isLoading"
-                      />
+                  <VProgressCircular :size="20" color="red" indeterminate v-if="isLoading" />
                 </VBtn>
               </VCol>
 
               <!-- create account -->
-          
 
-            
+
+
             </VRow>
           </VForm>
         </VCardText>
