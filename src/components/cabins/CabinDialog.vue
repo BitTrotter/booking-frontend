@@ -417,6 +417,10 @@ const destroyMap = () => {
     mapMarker = null
   }
 }
+const goToPage = cabinId => {
+  const url = `https://rockycabinsretreat.webflow.io/cabin?id=${cabinId}`
+  window.open(url, '_blank')
+}
 
 onMounted(() => {
   watch(() => props.isDialogVisible, async val => {
@@ -446,12 +450,7 @@ onUnmounted(() => destroyMap())
 </script>
 
 <template>
-  <VDialog
-    :model-value="props.isDialogVisible"
-    max-width="860"
-    scrollable
-    @update:model-value="dialogVisibleUpdate"
-  >
+  <VDialog :model-value="props.isDialogVisible" max-width="860" scrollable @update:model-value="dialogVisibleUpdate">
     <VCard flat>
 
       <!-- Header -->
@@ -517,41 +516,21 @@ onUnmounted(() => destroyMap())
 
               <VRow>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="name"
-                    label="Cabin Name"
-                    placeholder="Las Palmas Cabin"
-                    prepend-inner-icon="ri-home-3-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="name" label="Cabin Name" placeholder="Las Palmas Cabin"
+                    prepend-inner-icon="ri-home-3-line" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VSelect
-                    v-model="status"
-                    :items="statusItems"
-                    label="Status"
-                    prepend-inner-icon="ri-toggle-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VSelect v-model="status" :items="statusItems" label="Status" prepend-inner-icon="ri-toggle-line"
+                    :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12">
-                  <VTextField
-                    v-model="description_title"
-                    label="Description Title"
-                    placeholder="e.g. Cozy mountain retreat with stunning views"
-                    prepend-inner-icon="ri-text"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="description_title" label="Description Title"
+                    placeholder="e.g. Cozy mountain retreat with stunning views" prepend-inner-icon="ri-text"
+                    :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12">
-                  <VTextarea
-                    v-model="description"
-                    label="Description"
-                    placeholder="Brief description of the cabin..."
-                    rows="4"
-                    auto-grow
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextarea v-model="description" label="Description" placeholder="Brief description of the cabin..."
+                    rows="4" auto-grow :rules="[requiredValidator]" />
                 </VCol>
               </VRow>
             </VWindowItem>
@@ -565,67 +544,28 @@ onUnmounted(() => destroyMap())
 
               <VRow>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="price_per_night"
-                    type="number"
-                    label="Price per Night"
-                    placeholder="1500"
-                    prefix="$"
-                    min="0"
-                    prepend-inner-icon="ri-money-dollar-circle-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="price_per_night" type="number" label="Price per Night" placeholder="1500"
+                    prefix="$" min="0" prepend-inner-icon="ri-money-dollar-circle-line" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="capacity"
-                    type="number"
-                    label="Guest Capacity"
-                    placeholder="4"
-                    min="1"
-                    prepend-inner-icon="ri-group-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="capacity" type="number" label="Guest Capacity" placeholder="4" min="1"
+                    prepend-inner-icon="ri-group-line" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="beds"
-                    type="number"
-                    label="Number of Beds"
-                    placeholder="2"
-                    min="1"
-                    prepend-inner-icon="ri-hotel-bed-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="beds" type="number" label="Number of Beds" placeholder="2" min="1"
+                    prepend-inner-icon="ri-hotel-bed-line" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="bathrooms"
-                    type="number"
-                    label="Number of Bathrooms"
-                    placeholder="1"
-                    min="1"
-                    prepend-inner-icon="ri-drop-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="bathrooms" type="number" label="Number of Bathrooms" placeholder="1" min="1"
+                    prepend-inner-icon="ri-drop-line" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="check_in"
-                    type="time"
-                    label="Check-in Time"
-                    prepend-inner-icon="ri-login-box-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="check_in" type="time" label="Check-in Time"
+                    prepend-inner-icon="ri-login-box-line" :rules="[requiredValidator]" />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="check_out"
-                    type="time"
-                    label="Check-out Time"
-                    prepend-inner-icon="ri-logout-box-line"
-                    :rules="[requiredValidator]"
-                  />
+                  <VTextField v-model="check_out" type="time" label="Check-out Time"
+                    prepend-inner-icon="ri-logout-box-line" :rules="[requiredValidator]" />
                 </VCol>
               </VRow>
             </VWindowItem>
@@ -637,7 +577,8 @@ onUnmounted(() => destroyMap())
                   <VIcon size="18" color="primary">ri-star-line</VIcon>
                   <span class="text-subtitle-1 font-weight-semibold">Amenities & Features</span>
                 </div>
-                <VBtn size="small" variant="tonal" prepend-icon="ri-add-line" @click="showNewFeatureForm = !showNewFeatureForm">
+                <VBtn size="small" variant="tonal" prepend-icon="ri-add-line"
+                  @click="showNewFeatureForm = !showNewFeatureForm">
                   New Feature
                 </VBtn>
               </div>
@@ -649,19 +590,14 @@ onUnmounted(() => destroyMap())
                       Create and auto-select a new feature
                     </div>
                     <div class="d-flex gap-3 align-start">
-                      <VTextField
-                        v-model="newFeatureName"
-                        label="Feature name"
-                        placeholder="e.g. Fireplace"
-                        density="compact"
-                        hide-details
-                        class="flex-grow-1"
-                        @keyup.enter="createFeature"
-                      />
-                      <VBtn color="primary" variant="tonal" size="small" :loading="creatingFeature" class="mt-1" @click="createFeature">
+                      <VTextField v-model="newFeatureName" label="Feature name" placeholder="e.g. Fireplace"
+                        density="compact" hide-details class="flex-grow-1" @keyup.enter="createFeature" />
+                      <VBtn color="primary" variant="tonal" size="small" :loading="creatingFeature" class="mt-1"
+                        @click="createFeature">
                         Create
                       </VBtn>
-                      <VBtn variant="text" size="small" class="mt-1" @click="showNewFeatureForm = false; newFeatureName = ''">
+                      <VBtn variant="text" size="small" class="mt-1"
+                        @click="showNewFeatureForm = false; newFeatureName = ''">
                         Cancel
                       </VBtn>
                     </div>
@@ -675,17 +611,9 @@ onUnmounted(() => destroyMap())
 
               <VRow v-else>
                 <VCol cols="12">
-                  <VSelect
-                    v-model="selectedFeatures"
-                    :items="featureList.map(f => ({ title: f.name, value: f.id }))"
-                    multiple
-                    chips
-                    closable-chips
-                    clearable
-                    label="Select amenities"
-                    prepend-inner-icon="ri-apps-line"
-                    no-data-text="No features available. Create one above."
-                  />
+                  <VSelect v-model="selectedFeatures" :items="featureList.map(f => ({ title: f.name, value: f.id }))"
+                    multiple chips closable-chips clearable label="Select amenities" prepend-inner-icon="ri-apps-line"
+                    no-data-text="No features available. Create one above." />
                 </VCol>
               </VRow>
             </VWindowItem>
@@ -699,38 +627,21 @@ onUnmounted(() => destroyMap())
 
               <VRow class="mb-2">
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="lat"
-                    type="number"
-                    label="Latitude"
-                    placeholder="19.432608"
-                    step="0.000001"
-                    prepend-inner-icon="ri-map-pin-line"
-                    hint="Updated automatically when clicking the map"
-                    persistent-hint
-                  />
+                  <VTextField v-model="lat" type="number" label="Latitude" placeholder="19.432608" step="0.000001"
+                    prepend-inner-icon="ri-map-pin-line" hint="Updated automatically when clicking the map"
+                    persistent-hint />
                 </VCol>
                 <VCol cols="12" md="6">
-                  <VTextField
-                    v-model="lng"
-                    type="number"
-                    label="Longitude"
-                    placeholder="-99.133209"
-                    step="0.000001"
-                    prepend-inner-icon="ri-map-pin-2-line"
-                    hint="Updated automatically when clicking the map"
-                    persistent-hint
-                  />
+                  <VTextField v-model="lng" type="number" label="Longitude" placeholder="-99.133209" step="0.000001"
+                    prepend-inner-icon="ri-map-pin-2-line" hint="Updated automatically when clicking the map"
+                    persistent-hint />
                 </VCol>
                 <VCol cols="12">
                   <div class="text-body-2 text-medium-emphasis mb-2">
                     Click anywhere on the map to set the cabin coordinates
                   </div>
-                  <div
-                    ref="mapContainer"
-                    style="height: 360px; z-index: 0;"
-                    class="rounded-lg overflow-hidden border"
-                  />
+                  <div ref="mapContainer" style="height: 360px; z-index: 0;"
+                    class="rounded-lg overflow-hidden border" />
                 </VCol>
               </VRow>
             </VWindowItem>
@@ -745,17 +656,8 @@ onUnmounted(() => destroyMap())
             <span class="text-subtitle-1 font-weight-semibold">Upload New Images</span>
           </div>
 
-          <VFileInput
-            v-model="cabinImagesPayload"
-            multiple
-            accept="image/*"
-            label="Select images to upload"
-            density="comfortable"
-            prepend-icon="ri-image-add-line"
-            hide-details
-            :show-size="1000"
-            class="mb-4"
-          />
+          <VFileInput v-model="cabinImagesPayload" multiple accept="image/*" label="Select images to upload"
+            density="comfortable" prepend-icon="ri-image-add-line" hide-details :show-size="1000" class="mb-4" />
 
           <div v-if="previewUrls.length" class="mb-2">
             <div class="text-body-2 text-medium-emphasis font-weight-medium mb-3">
@@ -765,14 +667,8 @@ onUnmounted(() => destroyMap())
               <VCol v-for="(url, index) in previewUrls" :key="index" cols="6" sm="4" md="3">
                 <VCard variant="outlined" class="overflow-hidden position-relative">
                   <VImg :src="url" height="110" cover class="bg-grey-lighten-3" />
-                  <VBtn
-                    icon
-                    size="x-small"
-                    color="error"
-                    variant="flat"
-                    class="position-absolute top-0 right-0 ma-1"
-                    @click="removeFileFromPayload(index)"
-                  >
+                  <VBtn icon size="x-small" color="error" variant="flat" class="position-absolute top-0 right-0 ma-1"
+                    @click="removeFileFromPayload(index)">
                     <VIcon size="14">ri-close-line</VIcon>
                   </VBtn>
                   <div class="px-2 py-1">
@@ -784,7 +680,8 @@ onUnmounted(() => destroyMap())
               </VCol>
             </VRow>
             <div class="mt-4">
-              <VBtn color="primary" prepend-icon="ri-upload-cloud-2-line" :loading="uploadingImages" @click="uploadImages">
+              <VBtn color="primary" prepend-icon="ri-upload-cloud-2-line" :loading="uploadingImages"
+                @click="uploadImages">
                 Upload {{ previewUrls.length }} {{ previewUrls.length === 1 ? 'Image' : 'Images' }}
               </VBtn>
             </div>
@@ -808,16 +705,11 @@ onUnmounted(() => destroyMap())
                 </VImg>
                 <VCardText class="pa-3">
                   <div class="d-flex justify-space-between align-center gap-3">
-                    <VCheckbox
-                      :model-value="!!image.is_main"
-                      :label="image.is_main ? 'Main image' : 'Set as main'"
-                      color="primary"
-                      density="compact"
-                      hide-details
-                      :disabled="updatingMainImageId === image.id"
-                      @update:model-value="value => value && setMainImage(image)"
-                    />
-                    <VBtn color="error" variant="tonal" size="small" :loading="deletingImageId === image.id" @click="deleteExistingImage(image)">
+                    <VCheckbox :model-value="!!image.is_main" :label="image.is_main ? 'Main image' : 'Set as main'"
+                      color="primary" density="compact" hide-details :disabled="updatingMainImageId === image.id"
+                      @update:model-value="value => value && setMainImage(image)" />
+                    <VBtn color="error" variant="tonal" size="small" :loading="deletingImageId === image.id"
+                      @click="deleteExistingImage(image)">
                       Delete
                     </VBtn>
                   </div>
@@ -841,7 +733,8 @@ onUnmounted(() => destroyMap())
                 <VSelect v-model="typeRule" label="Rule type" :items="priceRuleTypes" :rules="[requiredValidator]" />
               </VCol>
               <VCol cols="12" md="6">
-                <VTextField v-model="typeRulePrice" label="Rule price per night" type="number" prefix="$" min="0" :rules="[requiredValidator]" />
+                <VTextField v-model="typeRulePrice" label="Rule price per night" type="number" prefix="$" min="0"
+                  :rules="[requiredValidator]" />
               </VCol>
               <VCol cols="12" md="6">
                 <VTextField v-model="starDate" label="Start date" type="date" :rules="[requiredValidator]" />
@@ -850,23 +743,20 @@ onUnmounted(() => destroyMap())
                 <VTextField v-model="endDate" label="End date" type="date" :rules="[requiredValidator]" />
               </VCol>
               <VCol cols="12" md="6">
-                <VTextField v-model="minNights" label="Minimum nights" type="number" min="1" :rules="[requiredValidator]" />
+                <VTextField v-model="minNights" label="Minimum nights" type="number" min="1"
+                  :rules="[requiredValidator]" />
               </VCol>
               <VCol cols="12" md="6">
-                <VSelect
-                  v-model="ruleStatus"
-                  label="Rule status"
-                  :items="[
-                    { title: 'Active', value: true },
-                    { title: 'Inactive', value: false },
-                  ]"
-                  :rules="[requiredValidator]"
-                />
+                <VSelect v-model="ruleStatus" label="Rule status" :items="[
+                  { title: 'Active', value: true },
+                  { title: 'Inactive', value: false },
+                ]" :rules="[requiredValidator]" />
               </VCol>
             </VRow>
 
             <div class="pt-2 pb-1">
-              <VBtn variant="tonal" color="primary" prepend-icon="ri-price-tag-3-line" :loading="submittingRule" @click="submitRulePrice">
+              <VBtn variant="tonal" color="primary" prepend-icon="ri-price-tag-3-line" :loading="submittingRule"
+                @click="submitRulePrice">
                 Save Price Rule
               </VBtn>
             </div>
@@ -885,6 +775,9 @@ onUnmounted(() => destroyMap())
           </VBtn>
           <VBtn color="secondary" variant="tonal" @click="dialogVisibleUpdate(false)">
             Cancel
+          </VBtn>
+          <VBtn color="secondary" variant="tonal" @click="goToPage(props.cabin.id)" v-if="isEditMode">
+            Go to Web Page
           </VBtn>
         </template>
         <template v-else>

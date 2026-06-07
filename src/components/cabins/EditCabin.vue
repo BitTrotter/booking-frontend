@@ -347,15 +347,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppFormDialog
-    :model-value="props.isDialogEditVisible"
-    title="Edit Cabin"
-    subtitle="Update information for this cabin"
-    :max-width="800"
-    no-internal-form
-    flat
-    @update:model-value="dialogVisibleUpdate"
-  >
+  <AppFormDialog :model-value="props.isDialogEditVisible" title="Edit Cabin"
+    subtitle="Update information for this cabin" :max-width="800" no-internal-form flat
+    @update:model-value="dialogVisibleUpdate">
     <!-- Tabs -->
     <template #header>
       <div>
@@ -368,38 +362,20 @@ onMounted(() => {
       </div>
     </template>
 
-    <VTabs
-      v-model="activeTab"
-      color="primary"
-      class="px-2 mb-4"
-    >
+    <VTabs v-model="activeTab" color="primary" class="px-2 mb-4">
       <VTab>
-        <VIcon
-          start
-          icon="ri-information-line"
-        />
+        <VIcon start icon="ri-information-line" />
         General
       </VTab>
       <VTab>
-        <VIcon
-          start
-          icon="ri-image-line"
-        />
+        <VIcon start icon="ri-image-line" />
         Images
-        <VChip
-          v-if="images.length"
-          size="x-small"
-          color="primary"
-          class="ml-2"
-        >
+        <VChip v-if="images.length" size="x-small" color="primary" class="ml-2">
           {{ images.length }}
         </VChip>
       </VTab>
       <VTab>
-        <VIcon
-          start
-          icon="ri-price-tag-3-line"
-        />
+        <VIcon start icon="ri-price-tag-3-line" />
         Price Rules
       </VTab>
     </VTabs>
@@ -411,120 +387,52 @@ onMounted(() => {
       <VWindowItem>
         <VForm ref="refCabinForm">
           <div class="d-flex align-center gap-2 mb-4">
-            <VIcon
-              size="18"
-              color="primary"
-            >
+            <VIcon size="18" color="primary">
               ri-information-line
             </VIcon>
             <span class="text-subtitle-1 font-weight-semibold">General Information</span>
           </div>
 
           <VRow>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="name"
-                label="Cabin Name"
-                placeholder="Las Palmas Cabin"
-                prepend-inner-icon="ri-home-3-line"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="name" label="Cabin Name" placeholder="Las Palmas Cabin"
+                prepend-inner-icon="ri-home-3-line" :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VSelect
-                v-model="status"
-                :items="statusItems"
-                label="Status"
-                prepend-inner-icon="ri-toggle-line"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VSelect v-model="status" :items="statusItems" label="Status" prepend-inner-icon="ri-toggle-line"
+                :rules="[requiredValidator]" />
             </VCol>
             <VCol cols="12">
-              <VTextarea
-                v-model="description"
-                label="Description"
-                placeholder="Brief description of the cabin..."
-                rows="3"
-                auto-grow
-                :rules="[requiredValidator]"
-              />
+              <VTextarea v-model="description" label="Description" placeholder="Brief description of the cabin..."
+                rows="3" auto-grow :rules="[requiredValidator]" />
             </VCol>
           </VRow>
 
           <VDivider class="my-5" />
 
           <div class="d-flex align-center gap-2 mb-4">
-            <VIcon
-              size="18"
-              color="primary"
-            >
+            <VIcon size="18" color="primary">
               ri-hotel-bed-line
             </VIcon>
             <span class="text-subtitle-1 font-weight-semibold">Details</span>
           </div>
 
           <VRow>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="price_per_night"
-                type="number"
-                label="Base price per Night"
-                prefix="$"
-                min="0"
-                prepend-inner-icon="ri-money-dollar-circle-line"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="price_per_night" type="number" label="Base price per Night" prefix="$" min="0"
+                prepend-inner-icon="ri-money-dollar-circle-line" :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="capacity"
-                type="number"
-                label="Guest Capacity"
-                placeholder="4"
-                min="1"
-                prepend-inner-icon="ri-group-line"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="capacity" type="number" label="Guest Capacity" placeholder="4" min="1"
+                prepend-inner-icon="ri-group-line" :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="beds"
-                type="number"
-                label="Number of Beds"
-                placeholder="2"
-                min="1"
-                prepend-inner-icon="ri-hotel-bed-line"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="beds" type="number" label="Number of Beds" placeholder="2" min="1"
+                prepend-inner-icon="ri-hotel-bed-line" :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="bathrooms"
-                type="number"
-                label="Number of Bathrooms"
-                placeholder="1"
-                min="1"
-                prepend-inner-icon="ri-drop-line"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="bathrooms" type="number" label="Number of Bathrooms" placeholder="1" min="1"
+                prepend-inner-icon="ri-drop-line" :rules="[requiredValidator]" />
             </VCol>
           </VRow>
 
@@ -532,33 +440,20 @@ onMounted(() => {
 
           <div class="d-flex justify-space-between align-center mb-4">
             <div class="d-flex align-center gap-2">
-              <VIcon
-                size="18"
-                color="primary"
-              >
+              <VIcon size="18" color="primary">
                 ri-star-line
               </VIcon>
               <span class="text-subtitle-1 font-weight-semibold">Amenities & Features</span>
             </div>
-            <VBtn
-              size="small"
-              variant="tonal"
-              prepend-icon="ri-add-line"
-              @click="showNewFeatureForm = !showNewFeatureForm"
-            >
+            <VBtn size="small" variant="tonal" prepend-icon="ri-add-line"
+              @click="showNewFeatureForm = !showNewFeatureForm">
               New Feature
             </VBtn>
           </div>
 
           <VExpandTransition>
-            <div
-              v-if="showNewFeatureForm"
-              class="mb-4"
-            >
-              <VCard
-                variant="outlined"
-                class="pa-4 rounded-lg"
-              >
+            <div v-if="showNewFeatureForm" class="mb-4">
+              <VCard variant="outlined" class="pa-4 rounded-lg">
                 <div class="text-body-2 font-weight-medium mb-3 text-medium-emphasis">
                   Create and auto-select a new feature
                 </div>
@@ -567,31 +462,14 @@ onMounted(() => {
                     <span class="text-caption text-medium-emphasis">Icon</span>
                     <FeatureIconPicker v-model="newFeatureIcon" />
                   </div>
-                  <VTextField
-                    v-model="newFeatureName"
-                    label="Feature name"
-                    placeholder="e.g. Fireplace"
-                    density="compact"
-                    hide-details
-                    class="flex-grow-1"
-                    @keyup.enter="createFeature"
-                  />
-                  <VBtn
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                    :loading="creatingFeature"
-                    class="mt-1"
-                    @click="createFeature"
-                  >
+                  <VTextField v-model="newFeatureName" label="Feature name" placeholder="e.g. Fireplace"
+                    density="compact" hide-details class="flex-grow-1" @keyup.enter="createFeature" />
+                  <VBtn color="primary" variant="tonal" size="small" :loading="creatingFeature" class="mt-1"
+                    @click="createFeature">
                     Create
                   </VBtn>
-                  <VBtn
-                    variant="text"
-                    size="small"
-                    class="mt-1"
-                    @click="showNewFeatureForm = false; newFeatureName = ''; newFeatureIcon = 'ri-star-line'"
-                  >
+                  <VBtn variant="text" size="small" class="mt-1"
+                    @click="showNewFeatureForm = false; newFeatureName = ''; newFeatureIcon = 'ri-star-line'">
                     Cancel
                   </VBtn>
                 </div>
@@ -599,50 +477,24 @@ onMounted(() => {
             </div>
           </VExpandTransition>
 
-          <div
-            v-if="loadingFeatures"
-            class="d-flex justify-center py-5"
-          >
-            <VProgressCircular
-              indeterminate
-              color="primary"
-              size="32"
-            />
+          <div v-if="loadingFeatures" class="d-flex justify-center py-5">
+            <VProgressCircular indeterminate color="primary" size="32" />
           </div>
 
           <VRow v-else>
             <VCol cols="12">
-              <VSelect
-                v-model="selectedFeatures"
-                :items="featureList"
-                item-title="name"
-                item-value="id"
-                multiple
-                chips
-                closable-chips
-                clearable
-                label="Select amenities"
-                prepend-inner-icon="ri-apps-line"
-                no-data-text="No features available. Create one above."
-              >
+              <VSelect v-model="selectedFeatures" :items="featureList" item-title="name" item-value="id" multiple chips
+                closable-chips clearable label="Select amenities" prepend-inner-icon="ri-apps-line"
+                no-data-text="No features available. Create one above.">
                 <template #chip="{ props: chipProps, item }">
-                  <VChip
-                    v-bind="chipProps"
-                    :prepend-icon="item.raw?.icon || 'ri-star-line'"
-                  >
+                  <VChip v-bind="chipProps" :prepend-icon="item.raw?.icon || 'ri-star-line'">
                     {{ item.title }}
                   </VChip>
                 </template>
                 <template #item="{ props: itemProps, item }">
-                  <VListItem
-                    v-bind="itemProps"
-                    :title="item.title"
-                  >
+                  <VListItem v-bind="itemProps" :title="item.title">
                     <template #prepend>
-                      <VIcon
-                        size="18"
-                        class="me-2"
-                      >
+                      <VIcon size="18" class="me-2">
                         {{ item.raw?.icon || 'ri-star-line' }}
                       </VIcon>
                     </template>
@@ -657,60 +509,25 @@ onMounted(() => {
       <!-- ── Images Tab ─────────────────────────────────────────────────── -->
       <VWindowItem>
         <div class="d-flex align-center gap-2 mb-4">
-          <VIcon
-            size="18"
-            color="primary"
-          >
+          <VIcon size="18" color="primary">
             ri-upload-cloud-2-line
           </VIcon>
           <span class="text-subtitle-1 font-weight-semibold">Upload New Images</span>
         </div>
 
-        <VFileInput
-          v-model="cabinImagesPayload"
-          multiple
-          accept="image/*"
-          label="Select images to upload"
-          density="comfortable"
-          prepend-icon="ri-image-add-line"
-          hide-details
-          :show-size="1000"
-          class="mb-4"
-        />
+        <VFileInput v-model="cabinImagesPayload" multiple accept="image/*" label="Select images to upload"
+          density="comfortable" prepend-icon="ri-image-add-line" hide-details :show-size="1000" class="mb-4" />
 
-        <div
-          v-if="previewUrls.length"
-          class="mb-2"
-        >
+        <div v-if="previewUrls.length" class="mb-2">
           <div class="text-body-2 text-medium-emphasis font-weight-medium mb-3">
             Selected — {{ previewUrls.length }} {{ previewUrls.length === 1 ? 'image' : 'images' }}
           </div>
           <VRow dense>
-            <VCol
-              v-for="(url, index) in previewUrls"
-              :key="index"
-              cols="6"
-              sm="4"
-              md="3"
-            >
-              <VCard
-                variant="outlined"
-                class="overflow-hidden position-relative"
-              >
-                <VImg
-                  :src="url"
-                  height="110"
-                  cover
-                  class="bg-grey-lighten-3"
-                />
-                <VBtn
-                  icon
-                  size="x-small"
-                  color="error"
-                  variant="flat"
-                  class="position-absolute top-0 right-0 ma-1"
-                  @click="removeFileFromPayload(index)"
-                >
+            <VCol v-for="(url, index) in previewUrls" :key="index" cols="6" sm="4" md="3">
+              <VCard variant="outlined" class="overflow-hidden position-relative">
+                <VImg :src="url" height="110" cover class="bg-grey-lighten-3" />
+                <VBtn icon size="x-small" color="error" variant="flat" class="position-absolute top-0 right-0 ma-1"
+                  @click="removeFileFromPayload(index)">
                   <VIcon size="14">
                     ri-close-line
                   </VIcon>
@@ -725,12 +542,8 @@ onMounted(() => {
           </VRow>
 
           <div class="mt-4">
-            <VBtn
-              color="primary"
-              prepend-icon="ri-upload-cloud-2-line"
-              :loading="uploadingImages"
-              @click="uploadImages"
-            >
+            <VBtn color="primary" prepend-icon="ri-upload-cloud-2-line" :loading="uploadingImages"
+              @click="uploadImages">
               Upload {{ previewUrls.length }} {{ previewUrls.length === 1 ? 'Image' : 'Images' }}
             </VBtn>
           </div>
@@ -739,68 +552,32 @@ onMounted(() => {
         <VDivider class="my-5" />
 
         <div class="d-flex align-center gap-2 mb-4">
-          <VIcon
-            size="18"
-            color="primary"
-          >
+          <VIcon size="18" color="primary">
             ri-gallery-line
           </VIcon>
           <span class="text-subtitle-1 font-weight-semibold">Existing Images</span>
-          <VChip
-            size="x-small"
-            color="secondary"
-          >
+          <VChip size="x-small" color="secondary">
             {{ images.length }}
           </VChip>
         </div>
 
         <VRow v-if="images.length">
-          <VCol
-            v-for="(image, index) in images"
-            :key="image.id || index"
-            cols="12"
-            sm="6"
-            lg="4"
-          >
-            <VCard
-              variant="outlined"
-              class="overflow-hidden h-100"
-            >
-              <VImg
-                :src="getImageUrl(image)"
-                height="200"
-                cover
-                class="bg-grey-lighten-3"
-              >
+          <VCol v-for="(image, index) in images" :key="image.id || index" cols="12" sm="6" lg="4">
+            <VCard variant="outlined" class="overflow-hidden h-100">
+              <VImg :src="getImageUrl(image)" height="200" cover class="bg-grey-lighten-3">
                 <div class="d-flex pa-3">
-                  <VChip
-                    v-if="image.is_main"
-                    color="primary"
-                    size="small"
-                    label
-                  >
+                  <VChip v-if="image.is_main" color="primary" size="small" label>
                     Main image
                   </VChip>
                 </div>
               </VImg>
               <VCardText class="pa-3">
                 <div class="d-flex justify-space-between align-center gap-3">
-                  <VCheckbox
-                    :model-value="!!image.is_main"
-                    :label="image.is_main ? 'Main image' : 'Set as main'"
-                    color="primary"
-                    density="compact"
-                    hide-details
-                    :disabled="updatingMainImageId === image.id"
-                    @update:model-value="value => value && setMainImage(image)"
-                  />
-                  <VBtn
-                    color="error"
-                    variant="tonal"
-                    size="small"
-                    :loading="deletingImageId === image.id"
-                    @click="deleteExistingImage(image)"
-                  >
+                  <VCheckbox :model-value="!!image.is_main" :label="image.is_main ? 'Main image' : 'Set as main'"
+                    color="primary" density="compact" hide-details :disabled="updatingMainImageId === image.id"
+                    @update:model-value="value => value && setMainImage(image)" />
+                  <VBtn color="error" variant="tonal" size="small" :loading="deletingImageId === image.id"
+                    @click="deleteExistingImage(image)">
                     Delete
                   </VBtn>
                 </div>
@@ -809,111 +586,48 @@ onMounted(() => {
           </VCol>
         </VRow>
 
-        <VAlert
-          v-else
-          type="info"
-          variant="tonal"
-          class="mb-4"
-          text="This cabin has no images yet."
-        />
+        <VAlert v-else type="info" variant="tonal" class="mb-4" text="This cabin has no images yet." />
       </VWindowItem>
 
       <!-- ── Price Rules Tab ────────────────────────────────────────────── -->
       <VWindowItem>
         <VForm ref="refPriceRuleForm">
           <div class="d-flex align-center gap-2 mb-4">
-            <VIcon
-              size="18"
-              color="primary"
-            >
+            <VIcon size="18" color="primary">
               ri-price-tag-3-line
             </VIcon>
             <span class="text-subtitle-1 font-weight-semibold">Add Price Rule</span>
           </div>
 
           <VRow>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VSelect
-                v-model="typeRule"
-                label="Rule type"
-                :items="priceRuleTypes"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VSelect v-model="typeRule" label="Rule type" :items="priceRuleTypes" :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="typeRulePrice"
-                label="Rule price per night"
-                type="number"
-                prefix="$"
-                min="0"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="typeRulePrice" label="Rule price per night" type="number" prefix="$" min="0"
+                :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="starDate"
-                label="Start date"
-                type="date"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="starDate" label="Start date" type="date" :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="endDate"
-                label="End date"
-                type="date"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="endDate" label="End date" type="date" :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VTextField
-                v-model="minNights"
-                label="Minimum nights"
-                type="number"
-                min="1"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VTextField v-model="minNights" label="Minimum nights" type="number" min="1"
+                :rules="[requiredValidator]" />
             </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <VSelect
-                v-model="ruleStatus"
-                label="Rule status"
-                :items="[
-                  { title: 'Active', value: true },
-                  { title: 'Inactive', value: false },
-                ]"
-                :rules="[requiredValidator]"
-              />
+            <VCol cols="12" md="6">
+              <VSelect v-model="ruleStatus" label="Rule status" :items="[
+                { title: 'Active', value: true },
+                { title: 'Inactive', value: false },
+              ]" :rules="[requiredValidator]" />
             </VCol>
           </VRow>
 
           <div class="pt-2 pb-1">
-            <VBtn
-              variant="tonal"
-              color="primary"
-              prepend-icon="ri-price-tag-3-line"
-              :loading="submittingRule"
-              @click="submitRulePrice"
-            >
+            <VBtn variant="tonal" color="primary" prepend-icon="ri-price-tag-3-line" :loading="submittingRule"
+              @click="submitRulePrice">
               Save Price Rule
             </VBtn>
           </div>
@@ -923,38 +637,20 @@ onMounted(() => {
 
     <template #actions>
       <template v-if="activeTab === 0">
-        <VBtn
-          color="primary"
-          :loading="submitting"
-          prepend-icon="ri-save-line"
-          @click="submitCabin"
-        >
+        <VBtn color="primary" :loading="submitting" prepend-icon="ri-save-line" @click="submitCabin">
           Save Changes
         </VBtn>
-        <VBtn
-          color="secondary"
-          variant="tonal"
-          @click="dialogVisibleUpdate(false)"
-        >
+        <VBtn color="secondary" variant="tonal" @click="dialogVisibleUpdate(false)">
           Cancel
         </VBtn>
       </template>
       <template v-else>
-        <VBtn
-          color="secondary"
-          variant="tonal"
-          @click="dialogVisibleUpdate(false)"
-        >
+        <VBtn color="secondary" variant="tonal" @click="dialogVisibleUpdate(false)">
           Close
         </VBtn>
       </template>
       <VSpacer />
-      <VBtn
-        color="error"
-        variant="tonal"
-        prepend-icon="ri-delete-bin-line"
-        @click="deleteItem(props.cabin)"
-      >
+      <VBtn color="error" variant="tonal" prepend-icon="ri-delete-bin-line" @click="deleteItem(props.cabin)">
         Delete Cabin
       </VBtn>
     </template>
