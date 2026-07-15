@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router'
 definePage({
     meta: {
         layout: 'blank',
+        public: true,
     },
 })
 
