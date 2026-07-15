@@ -37,6 +37,12 @@ export default [
     permission: 'list_reservation',
   },
   {
+    title: 'Booking Widget',
+    to: { name: 'booking-widget' },
+    icon: { icon: 'ri-window-line' },
+    permission: 'list_reservation',
+  },
+  {
     title: 'Payments',
     to: { name: 'payments' },
     icon: { icon: 'ri-bank-card-line' },
