@@ -12,13 +12,53 @@ definePage({
 
 const route = useRoute()
 const cabinDetails = ref(null)
-const selectedCabinId = computed(() => {
-    const rawId = route.params.id ?? route.query.id ?? route.query.cabinId
-    const parsedId = Number(rawId)
-    console.log('Parsed cabin ID:', parsedId)
 
-    return Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null
-})
+const getCabinIdFromRoute = () => {
+    const candidates = [
+        route.params?.id,
+        route.params?.cabinId,
+        route.params?.cabin_id,
+        route.query?.id,
+        route.query?.cabinId,
+        route.query?.cabin_id,
+    ]
+
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+
+    if (searchParams) {
+        candidates.push(
+            searchParams.get('id'),
+            searchParams.get('cabinId'),
+            searchParams.get('cabin_id'),
+        )
+    }
+
+    const pathMatch = route.path?.match(/\/(?:cabins?|cabin)\/(\d+)(?:\/|$)/i)
+    if (pathMatch?.[1])
+        candidates.push(pathMatch[1])
+
+    for (const value of candidates) {
+        if (value === undefined || value === null || value === '')
+            continue
+
+        if (Array.isArray(value)) {
+            const firstValue = value[0]
+            if (firstValue !== undefined && firstValue !== null && firstValue !== '')
+                return Number(firstValue) > 0 ? Number(firstValue) : null
+            continue
+        }
+
+        const normalizedValue = String(value).trim()
+        const parsedValue = Number(normalizedValue)
+
+        if (Number.isFinite(parsedValue) && parsedValue > 0)
+            return parsedValue
+    }
+
+    return null
+}
+
+const selectedCabinId = computed(() => getCabinIdFromRoute())
 const startDate = ref('')
 const endDate = ref('')
 const adults = ref(1)
@@ -94,7 +134,7 @@ const handleCheckAvailability = async () => {
 
     try {
         const resp = await $api(
-            `/public/reservations/availability?id=${selectedCabinId.value}&start_date=${startDate.value}&end_date=${endDate.value}&adults=${adults.value}&children=${children.value}`,
+            `/public/reservations/availability?cabin_id=${selectedCabinId.value}&start_date=${startDate.value}&end_date=${endDate.value}&adults=${adults.value}&children=${children.value}`,
         )
         availability.value = resp
     } catch (error) {
@@ -151,7 +191,7 @@ watch(selectedCabinId, () => {
                             <div v-else-if="selectedCabin" class="price-pill">
                                 <span class="price-pill-label">Price / night</span>
                                 <span class="price-pill-value">{{ formatCurrency(selectedCabin.price_per_night)
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                         <div class="field field-small">
