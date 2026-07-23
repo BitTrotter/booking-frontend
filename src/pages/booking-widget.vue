@@ -55,9 +55,10 @@ const endPickerConfig = computed(() => ({
 
 const fetchCabins = async () => {
     try {
-        const resp = await $api('/cabins')
+        const resp = await $api('/public/cabins')
         cabinItems.value = Array.isArray(resp) ? resp : resp?.cabins || []
     } catch (error) {
+        cabinItems.value = []
         console.error('Failed to load cabins:', error)
     }
 }
