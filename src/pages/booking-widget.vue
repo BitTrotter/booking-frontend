@@ -1,6 +1,6 @@
 <script setup>
 import { $api } from '@/utils/api'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 definePage({
@@ -11,21 +11,21 @@ definePage({
 })
 
 const route = useRoute()
-const cabinItems = ref([])
-const selectedCabinId = computed(() => Number(route.query.cabin_id || route.query.cabinId) || null)
+const cabinDetails = ref(null)
+const selectedCabinId = computed(() => {
+    const rawId = route.params.id ?? route.query.id ?? route.query.cabinId
+    const parsedId = Number(rawId)
+
+    return Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null
+})
 const startDate = ref('')
 const endDate = ref('')
 const adults = ref(1)
 const children = ref(0)
 const loading = ref(false)
+const cabinLoading = ref(false)
 const availability = ref(null)
 const errorMessage = ref('')
-
-const embedExampleHref = computed(() => {
-    const query = selectedCabinId.value ? `?cabin_id=${selectedCabinId.value}` : '?cabin_id=6'
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    return origin ? `${origin}/booking-widget${query}` : `/booking-widget${query}`
-})
 
 const totalNights = computed(() => {
     if (!startDate.value || !endDate.value)
@@ -53,17 +53,26 @@ const endPickerConfig = computed(() => ({
     minDate: startDate.value || 'today',
 }))
 
-const fetchCabins = async () => {
+const fetchCabinDetails = async () => {
+    if (!selectedCabinId.value) {
+        cabinDetails.value = null
+        return
+    }
+
+    cabinLoading.value = true
+
     try {
-        const resp = await $api('/public/cabins')
-        cabinItems.value = Array.isArray(resp) ? resp : resp?.cabins || []
+        const resp = await $api(`/public/cabins/${selectedCabinId.value}`)
+        cabinDetails.value = resp?.data || resp || null
     } catch (error) {
-        cabinItems.value = []
-        console.error('Failed to load cabins:', error)
+        cabinDetails.value = null
+        console.error('Failed to load cabin details:', error)
+    } finally {
+        cabinLoading.value = false
     }
 }
 
-const selectedCabin = computed(() => cabinItems.value.find(cabin => cabin.id === selectedCabinId.value) || null)
+const selectedCabin = computed(() => cabinDetails.value || null)
 
 const formatCurrency = amount => {
     const value = Number(amount || 0)
@@ -88,7 +97,7 @@ const handleCheckAvailability = async () => {
         )
         availability.value = resp
     } catch (error) {
-        errorMessage.value = error?.message || 'No se pudo consultar la disponibilidad.'
+        errorMessage.value = error?.message || 'Could not check availability.'
     } finally {
         loading.value = false
     }
@@ -97,131 +106,93 @@ const handleCheckAvailability = async () => {
 const availabilityStatus = computed(() => {
     if (!availability.value)
         return null
-    return availability.value.available ? 'Disponible' : 'No disponible'
+    return availability.value.available ? 'Available' : 'Unavailable'
 })
 
+const handleReserve = () => {
+    window.alert('Reservation functionality is not implemented yet.')
+}
+
 onMounted(() => {
-    fetchCabins()
+    fetchCabinDetails()
+})
+
+watch(selectedCabinId, () => {
+    fetchCabinDetails()
 })
 </script>
 
 <template>
     <div class="booking-widget-page">
         <div class="booking-widget-shell">
-            <VRow class="booking-widget-grid" align="stretch">
-                <VCol>
-                    <VCard class="h-100" elevation="2">
-                        <VCardText class="pt-0">
-                            <VRow class="gy-4">
+            <VCard class="booking-card" elevation="0">
+                <VCardText class="pa-3">
 
-                                <VCol cols="12" v-if="!selectedCabinId">
-                                    <VAlert border="start" color="warning" variant="tonal">
-                                        No se encontró <strong>cabin_id</strong> en la URL. Añade
-                                        <code>?cabin_id=6</code> al final.
-                                    </VAlert>
-                                </VCol>
+                    <VAlert v-if="!selectedCabinId" border="start" color="warning" variant="tonal" density="compact"
+                        class="mb-3">
+                        No <strong>cabin_id</strong> was found in the URL. Add
+                        <code>?cabin_id=6</code> at the end.
+                    </VAlert>
 
-                                <VCol cols="12" md="6">
-                                    <AppDateTimePicker v-model="startDate" label="Check-in" placeholder="YYYY-MM-DD"
-                                        :config="startPickerConfig" />
-                                </VCol>
-                                <VCol cols="12" md="6">
-                                    <AppDateTimePicker v-model="endDate" label="Check-out" placeholder="YYYY-MM-DD"
-                                        :config="endPickerConfig" />
-                                </VCol>
+                    <div class="booking-row">
+                        <div class="field field-date">
+                            <AppDateTimePicker v-model="startDate" label="Check-in" placeholder="YYYY-MM-DD"
+                                density="compact" hide-details="auto" :config="startPickerConfig" />
+                        </div>
+                        <div class="field field-date">
+                            <AppDateTimePicker v-model="endDate" label="Check-out" placeholder="YYYY-MM-DD"
+                                density="compact" hide-details="auto" :config="endPickerConfig" />
+                        </div>
+                        <div class="field field-price">
+                            <div v-if="cabinLoading" class="price-pill price-pill-loading">
+                                Loading...
+                            </div>
+                            <div v-else-if="selectedCabin" class="price-pill">
+                                <span class="price-pill-label">Price / night</span>
+                                <span class="price-pill-value">{{ formatCurrency(selectedCabin.price_per_night)
+                                }}</span>
+                            </div>
+                        </div>
+                        <div class="field field-small">
+                            <VTextField v-model.number="adults" type="number" min="1" label="Adults" density="compact"
+                                hide-details="auto" />
+                        </div>
+                        <div class="field field-small">
+                            <VTextField v-model.number="children" type="number" min="0" label="Children"
+                                density="compact" hide-details="auto" />
+                        </div>
+                        <div class="field field-action">
+                            <VBtn style="border-radius: 8px;" class="w-100 " color="primary" variant="elevated"
+                                :loading="loading" :disabled="!canCheck || loading" @click="handleCheckAvailability">
+                                Check
+                            </VBtn>
+                        </div>
+                    </div>
 
-                                <VCol cols="12" md="6">
-                                    <VTextField v-model.number="adults" type="number" min="1" label="Adultos"
-                                        hint="Mínimo 1 adulto" persistent-hint />
-                                </VCol>
-                                <VCol cols="12" md="6">
-                                    <VTextField v-model.number="children" type="number" min="0" label="Niños"
-                                        hint="0 si no hay" persistent-hint />
-                                </VCol>
+                    <!-- Barra de resultado: precio + estado + reservar, en una sola línea -->
+                    <div v-if="availability" class="result-bar" :class="{ 'is-available': availability.available }">
+                        <div class="result-price">
+                            <span class="result-price-label">Total price</span>
+                            <span class="result-price-value">
+                                {{ availability?.total_price ? formatCurrency(availability.total_price) : '—' }}
+                            </span>
+                        </div>
+                        <span class="result-status" :class="availability.available ? 'ok' : 'no'">
+                            {{ availabilityStatus }}
+                        </span>
+                        <VBtn size="small" color="success" variant="elevated" :disabled="!availability.available"
+                            @click="handleReserve">
+                            Reserve
+                        </VBtn>
+                    </div>
 
-                                <VCol cols="12" class="d-flex flex-column gap-3">
-                                    <VBtn color="primary" variant="elevated" :loading="loading"
-                                        :disabled="!canCheck || loading" @click="handleCheckAvailability">
-                                        Consultar disponibilidad
-                                    </VBtn>
-                                    <div class="text-body-2 text-medium-emphasis">
-                                        El precio total se calcula por noche usando la API de disponibilidad.
-                                    </div>
-                                </VCol>
+                    <VAlert v-if="errorMessage" border="start" color="error" variant="tonal" density="compact"
+                        class="mt-3">
+                        {{ errorMessage }}
+                    </VAlert>
 
-                                <VCol cols="12">
-                                    <VCard class="availability-summary pa-4" variant="tonal">
-                                        <div class="d-flex flex-wrap gap-4 align-center justify-space-between">
-                                            <div>
-                                                <div class="text-caption text-medium-emphasis">Resumen de reserva</div>
-                                                <div class="text-h6 font-weight-bold">
-                                                    {{ selectedCabin?.name || (selectedCabinId ? `Cabaña
-                                                    #${selectedCabinId}` : 'Cabaña no seleccionada') }}
-                                                </div>
-                                            </div>
-                                            <div class="d-flex gap-2 flex-wrap align-center">
-                                                <VChip v-if="availabilityStatus"
-                                                    :color="availability.value.available ? 'success' : 'error'"
-                                                    size="small" label>
-                                                    {{ availabilityStatus }}
-                                                </VChip>
-                                                <VChip color="secondary" size="small" label>
-                                                    {{ adults }} adulto<span v-if="children > 0"> + {{ children }}
-                                                        niño<span v-if="children !== 1">s</span></span>
-                                                </VChip>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex flex-wrap gap-4 mt-4">
-                                            <div class="summary-card">
-                                                <div class="text-caption text-medium-emphasis">Check-in</div>
-                                                <div class="text-body-1 font-weight-semibold">{{ startDate || '—' }}
-                                                </div>
-                                            </div>
-                                            <div class="summary-card">
-                                                <div class="text-caption text-medium-emphasis">Check-out</div>
-                                                <div class="text-body-1 font-weight-semibold">{{ endDate || '—' }}</div>
-                                            </div>
-                                            <div class="summary-card">
-                                                <div class="text-caption text-medium-emphasis">Noches</div>
-                                                <div class="text-body-1 font-weight-semibold">{{ totalNights || '—' }}
-                                                </div>
-                                            </div>
-                                            <div class="summary-card">
-                                                <div class="text-caption text-medium-emphasis">Precio estimado</div>
-                                                <div class="text-body-1 font-weight-semibold">
-                                                    {{ availability?.total_price ?
-                                                        formatCurrency(availability.total_price) : '—' }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </VCard>
-                                </VCol>
-
-                                <VCol cols="12" v-if="availability && availability.available" class="text-success">
-                                    <VAlert border="start" color="success" variant="tonal">
-                                        ¡La cabaña está disponible! Total: {{ formatCurrency(availability.total_price)
-                                        }} por {{ availability.total_days }} noche<span
-                                            v-if="availability.total_days !== 1">s</span>.
-                                    </VAlert>
-                                </VCol>
-                                <VCol cols="12" v-else-if="availability && availability.available === false"
-                                    class="text-error">
-                                    <VAlert border="start" color="error" variant="tonal">
-                                        Esta cabaña no está disponible en las fechas seleccionadas. Prueba con otras
-                                        fechas o cabañas.
-                                    </VAlert>
-                                </VCol>
-                                <VCol cols="12" v-if="errorMessage">
-                                    <VAlert border="start" color="error" variant="tonal">
-                                        {{ errorMessage }}
-                                    </VAlert>
-                                </VCol>
-                            </VRow>
-                        </VCardText>
-                    </VCard>
-                </VCol>
-            </VRow>
+                </VCardText>
+            </VCard>
         </div>
     </div>
 </template>
@@ -248,13 +219,127 @@ onMounted(() => {
     padding: 0;
 }
 
-.booking-widget-grid {
-    width: 100%;
-    gap: 1.5rem;
+.booking-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.75rem;
 }
 
+.field {
+    flex: 1 1 160px;
+    min-width: 130px;
+}
+
+.field-small {
+    flex: 0 1 90px;
+    min-width: 80px;
+}
+
+.field-action {
+    flex: 0 0 auto;
+    min-width: 140px;
+    align-self: center;
+
+}
+
+.field-price {
+    flex: 0 1 140px;
+    min-width: 130px;
+}
+
+.price-pill {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 56px;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid rgba(184, 135, 70, 0.24);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.price-pill-loading {
+    color: rgba(46, 42, 39, 0.7);
+    font-size: 0.9rem;
+}
+
+.price-pill-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    opacity: 0.72;
+}
+
+.price-pill-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--widget-text);
+}
+
+.result-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(184, 135, 70, 0.12);
+    border-left: 3px solid var(--widget-accent);
+}
+
+.result-bar.is-available {
+    background: rgba(63, 138, 79, 0.12);
+    border-left-color: #3f8a4f;
+}
+
+.result-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+}
+
+.result-price-label {
+    font-size: 0.75rem;
+    color: rgba(46, 42, 39, 0.7);
+}
+
+.result-price-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--widget-text);
+}
+
+.result-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+}
+
+.result-status.ok {
+    color: #2f6e3c;
+    background: rgba(63, 138, 79, 0.18);
+}
+
+.result-status.no {
+    color: #a13b2b;
+    background: rgba(161, 59, 43, 0.18);
+}
+
+/* Sin sombra ni bordes redondeados en ningún elemento del widget */
 :deep(.v-card),
-:deep(.availability-summary) {
+:deep(.v-btn),
+:deep(.v-field),
+:deep(.v-field__outline),
+:deep(.v-text-field .v-field),
+:deep(.v-alert),
+:deep(.v-chip) {
+
+    box-shadow: none !important;
+}
+
+:deep(.v-card) {
     background-color: var(--widget-bg) !important;
     color: var(--widget-text) !important;
 }
@@ -279,44 +364,5 @@ onMounted(() => {
 
 :deep(.text-medium-emphasis) {
     color: rgba(46, 42, 39, 0.75) !important;
-}
-
-.summary-card {
-    min-width: 9rem;
-}
-
-.panel-value {
-    margin-bottom: 1.25rem;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    background: rgba(var(--v-theme-primary), 0.08);
-}
-
-.panel-card {
-    padding: 1rem;
-    border-radius: 1rem;
-}
-
-.panel-card-title {
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-}
-
-.iframe-code {
-    margin: 0;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    background: rgba(var(--v-theme-surface), 0.95);
-    overflow-x: auto;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-}
-
-.panel-list {
-    margin: 0.5rem 0 0;
-    padding-left: 1.1rem;
-}
-
-.panel-list li {
-    margin-bottom: 0.5rem;
 }
 </style>
