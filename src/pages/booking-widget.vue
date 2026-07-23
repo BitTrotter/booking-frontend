@@ -107,40 +107,12 @@ onMounted(() => {
 <template>
     <div class="booking-widget-page">
         <div class="booking-widget-shell">
-            <VCard class="booking-widget-hero pa-6" elevation="3">
-                <div class="d-flex flex-column flex-sm-row justify-space-between gap-4 align-center">
-                    <div>
-                        <div class="text-h3 font-weight-bold mb-2">Reserva tu cabaña</div>
-                        <div class="text-body-1 text-medium-emphasis">
-                            Elige tu check-in, check-out y cantidad de huéspedes. Consulta disponibilidad y precio por
-                            noche en tiempo real.
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <VChip color="primary" variant="tonal" size="large" label>
-                            Ideal para embed en iframe
-                        </VChip>
-                    </div>
-                </div>
-            </VCard>
-
-            <VRow class="booking-widget-grid mt-6" align="stretch">
-                <VCol cols="12" lg="7">
+            <VRow class="booking-widget-grid" align="stretch">
+                <VCol>
                     <VCard class="h-100" elevation="2">
-                        <VCardText class="pb-0">
-                            <div class="text-h5 font-weight-semibold mb-2">Completa tu estadía</div>
-                            <div class="text-body-2 text-medium-emphasis mb-4">
-                                La cabaña se define por `cabin_id` en la URL. Luego elige fechas, adultos y niños.
-                            </div>
-                        </VCardText>
-
                         <VCardText class="pt-0">
                             <VRow class="gy-4">
-                                <VCol cols="12">
-                                    <VAlert border="start" color="info" variant="tonal">
-                                        Usa la URL con <code>?cabin_id=6</code> para cargar la cabaña automáticamente.
-                                    </VAlert>
-                                </VCol>
+
                                 <VCol cols="12" v-if="!selectedCabinId">
                                     <VAlert border="start" color="warning" variant="tonal">
                                         No se encontró <strong>cabin_id</strong> en la URL. Añade
@@ -248,37 +220,6 @@ onMounted(() => {
                         </VCardText>
                     </VCard>
                 </VCol>
-
-                <VCol cols="12" lg="5">
-                    <VCard class="h-100 booking-widget-panel" elevation="2">
-                        <VCardText>
-                            <div class="text-h5 font-weight-semibold mb-3">Vista previa para iframe</div>
-                            <div class="text-body-2 text-medium-emphasis mb-4">
-                                Usa esta pantalla dentro de un iframe para mostrar el buscador de reservas en otra web.
-                            </div>
-
-                            <div class="panel-value">
-                                <div class="text-caption text-medium-emphasis">Ruta pública</div>
-                                <div class="text-body-1 font-weight-semibold">/booking-widget</div>
-                            </div>
-
-                            <VSheet class="panel-card mt-4" color="surface" elevation="1">
-                                <div class="panel-card-title">Código de ejemplo de iframe</div>
-                                <pre
-                                    class="iframe-code">&lt;iframe src="{{ embedExampleHref }}" width="100%" height="780" frameborder="0" loading="lazy"&gt;&lt;/iframe&gt;</pre>
-                            </VSheet>
-
-                            <div class="mt-4">
-                                <div class="text-caption text-medium-emphasis">Sugerencias UX</div>
-                                <ul class="panel-list">
-                                    <li>Usa un ancho completo para un booking widget limpio.</li>
-                                    <li>Mantén la altura arriba de 720px para el calendario y el formulario.</li>
-                                    <li>Activa la recarga al cambiar fechas para ver el precio instantáneo.</li>
-                                </ul>
-                            </div>
-                        </VCardText>
-                    </VCard>
-                </VCol>
             </VRow>
         </div>
     </div>
@@ -286,26 +227,57 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .booking-widget-page {
-    min-height: 100vh;
-    padding: 2rem 1.5rem 3rem;
-    background-color: rgba(var(--v-theme-surface), 1);
+    --widget-bg: #F4E9DA;
+    --widget-accent: #B88746;
+    --widget-text: #2E2A27;
+
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+    margin: 0;
+    background-color: var(--widget-bg);
+    color: var(--widget-text);
+    box-sizing: border-box;
 }
 
 .booking-widget-shell {
-    max-width: 1280px;
-    margin-inline: auto;
-}
-
-.booking-widget-hero {
-    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.16), rgba(var(--v-theme-surface), 1));
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 .booking-widget-grid {
+    width: 100%;
     gap: 1.5rem;
 }
 
-.availability-summary {
-    background: rgba(var(--v-theme-surface), 1);
+:deep(.v-card),
+:deep(.availability-summary) {
+    background-color: var(--widget-bg) !important;
+    color: var(--widget-text) !important;
+}
+
+:deep(.v-btn) {
+    background-color: var(--widget-accent) !important;
+    color: var(--widget-bg) !important;
+    border-color: var(--widget-accent) !important;
+}
+
+:deep(.v-btn:hover) {
+    background-color: #9f6d35 !important;
+    border-color: #9f6d35 !important;
+}
+
+:deep(.v-alert),
+:deep(.v-field__input),
+:deep(.v-label),
+:deep(.v-chip) {
+    color: var(--widget-text) !important;
+}
+
+:deep(.text-medium-emphasis) {
+    color: rgba(46, 42, 39, 0.75) !important;
 }
 
 .summary-card {
