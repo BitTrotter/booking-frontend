@@ -15,6 +15,7 @@ const cabinDetails = ref(null)
 const selectedCabinId = computed(() => {
     const rawId = route.params.id ?? route.query.id ?? route.query.cabinId
     const parsedId = Number(rawId)
+    console.log('Parsed cabin ID:', parsedId)
 
     return Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null
 })
@@ -150,7 +151,7 @@ watch(selectedCabinId, () => {
                             <div v-else-if="selectedCabin" class="price-pill">
                                 <span class="price-pill-label">Price / night</span>
                                 <span class="price-pill-value">{{ formatCurrency(selectedCabin.price_per_night)
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                         <div class="field field-small">
