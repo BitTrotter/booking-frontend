@@ -93,7 +93,7 @@ const handleCheckAvailability = async () => {
 
     try {
         const resp = await $api(
-            `/public/reservations/availability?cabin_id=${selectedCabinId.value}&start_date=${startDate.value}&end_date=${endDate.value}&adults=${adults.value}&children=${children.value}`,
+            `/public/reservations/availability?id=${selectedCabinId.value}&start_date=${startDate.value}&end_date=${endDate.value}&adults=${adults.value}&children=${children.value}`,
         )
         availability.value = resp
     } catch (error) {
@@ -130,8 +130,8 @@ watch(selectedCabinId, () => {
 
                     <VAlert v-if="!selectedCabinId" border="start" color="warning" variant="tonal" density="compact"
                         class="mb-3">
-                        No <strong>cabin_id</strong> was found in the URL. Add
-                        <code>?cabin_id=6</code> at the end.
+                        No <strong>id</strong> was found in the URL. Add
+                        <code>?id=6</code> at the end.
                     </VAlert>
 
                     <div class="booking-row">
@@ -150,7 +150,7 @@ watch(selectedCabinId, () => {
                             <div v-else-if="selectedCabin" class="price-pill">
                                 <span class="price-pill-label">Price / night</span>
                                 <span class="price-pill-value">{{ formatCurrency(selectedCabin.price_per_night)
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                         <div class="field field-small">
