@@ -25,5 +25,19 @@
         "statusBar.debuggingBackground": "#42b883",
         "statusBar.debuggingForeground": "#15202b"
     },
-    "peacock.color": "#42b883"
+    "peacock.color": "#42b883",
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "RCR",
+            "group": "pgsql",
+            "database": "booking_db",
+            "username": "postgres",
+            "password": "n0turBusiness"
+        }
+    ]
 }
