@@ -2,6 +2,7 @@
 import { $api } from '@/utils/api'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useWidgetHeightMessenger } from '@/composables/useWidgetHeightMessenger'
 
 definePage({
   meta: {
@@ -12,6 +13,7 @@ definePage({
 
 const route = useRoute()
 const router = useRouter()
+const widgetRoot = ref(null)
 
 const cabinDetails = ref(null)
 const loading = ref(false)
@@ -103,6 +105,7 @@ const unwrapResponse = response => response?.data ?? response ?? null
 const fetchCabinDetails = async () => {
   if (!selectedCabinId.value) {
     cabinDetails.value = null
+    
     return
   }
 
@@ -110,6 +113,7 @@ const fetchCabinDetails = async () => {
 
   try {
     const resp = await $api(`/public/cabins/${selectedCabinId.value}`)
+
     cabinDetails.value = unwrapResponse(resp)
   } catch (error) {
     cabinDetails.value = null
@@ -120,9 +124,11 @@ const fetchCabinDetails = async () => {
 }
 
 const selectedCabin = computed(() => cabinDetails.value || null)
+const { scheduleWidgetHeightSend } = useWidgetHeightMessenger(widgetRoot)
 
 const formatCurrency = amount => {
   const value = Number(amount || 0)
+  
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
     currency: 'USD',
@@ -142,6 +148,7 @@ const handleCheckAvailability = async () => {
     const resp = await $api(
       `/public/reservations/availability?cabin_id=${selectedCabinId.value}&start_date=${startDate.value}&end_date=${endDate.value}&adults=${adults.value}&children=${children.value}`,
     )
+
     availability.value = unwrapResponse(resp)
   } catch (error) {
     errorMessage.value = error?.message || 'Could not check availability.'
@@ -164,9 +171,9 @@ const handleReserve = () => {
   router.push({
     path: '/checkout',
     query: {
-      cabin_id: String(selectedCabinId.value),
-      start_date: startDate.value,
-      end_date: endDate.value,
+      'cabin_id': String(selectedCabinId.value),
+      'start_date': startDate.value,
+      'end_date': endDate.value,
       adults: String(adults.value),
       children: String(children.value),
     },
@@ -175,68 +182,145 @@ const handleReserve = () => {
 
 onMounted(() => {
   fetchCabinDetails()
+  scheduleWidgetHeightSend()
 })
 
 watch(selectedCabinId, () => {
   fetchCabinDetails()
+  scheduleWidgetHeightSend()
 })
 </script>
 
-<template>
-  <div class="booking-widget-page">
+<template style="background-color: #fff;">
+  <div
+    ref="widgetRoot"
+    class="booking-widget-page"
+  >
     <div class="booking-widget-shell">
-      <VCard class="booking-card" elevation="0">
+      <VCard
+        class="booking-card"
+        elevation="0"
+      >
         <VCardText class="pa-3">
-          <VAlert v-if="!selectedCabinId" border="start" color="warning" variant="tonal" density="compact" class="mb-3">
+          <VAlert
+            v-if="!selectedCabinId"
+            border="start"
+            color="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+          >
             No <strong>id</strong> was found in the URL. Add
             <code>?id=6</code> at the end.
           </VAlert>
 
           <div class="booking-row">
             <div class="field field-date">
-              <AppDateTimePicker v-model="startDate" label="Check-in" placeholder="YYYY-MM-DD" density="compact" hide-details="auto" :config="startPickerConfig" />
+              <AppDateTimePicker
+                v-model="startDate"
+                label="Check-in"
+                placeholder="YYYY-MM-DD"
+                density="compact"
+                hide-details="auto"
+                :config="startPickerConfig"
+              />
             </div>
             <div class="field field-date">
-              <AppDateTimePicker v-model="endDate" label="Check-out" placeholder="YYYY-MM-DD" density="compact" hide-details="auto" :config="endPickerConfig" />
+              <AppDateTimePicker
+                v-model="endDate"
+                label="Check-out"
+                placeholder="YYYY-MM-DD"
+                density="compact"
+                hide-details="auto"
+                :config="endPickerConfig"
+              />
             </div>
             <div class="field field-price">
-              <div v-if="cabinLoading" class="price-pill price-pill-loading">
+              <div
+                v-if="cabinLoading"
+                class="price-pill price-pill-loading"
+              >
                 Loading...
               </div>
-              <div v-else-if="selectedCabin" class="price-pill">
+              <div
+                v-else-if="selectedCabin"
+                class="price-pill"
+              >
                 <span class="price-pill-label">Price / night</span>
                 <span class="price-pill-value">{{ formatCurrency(selectedCabin.price_per_night) }}</span>
               </div>
             </div>
             <div class="field field-small">
-              <VTextField v-model.number="adults" type="number" min="1" label="Adults" density="compact" hide-details="auto" />
+              <VTextField
+                v-model.number="adults"
+                type="number"
+                min="1"
+                label="Adults"
+                density="compact"
+                hide-details="auto"
+              />
             </div>
             <div class="field field-small">
-              <VTextField v-model.number="children" type="number" min="0" label="Children" density="compact" hide-details="auto" />
+              <VTextField
+                v-model.number="children"
+                type="number"
+                min="0"
+                label="Children"
+                density="compact"
+                hide-details="auto"
+              />
             </div>
             <div class="field field-action">
-              <VBtn style="border-radius: 8px;" class="w-100" color="primary" variant="elevated" :loading="loading" :disabled="!canCheck || loading" @click="handleCheckAvailability">
+              <VBtn
+                style="border-radius: 8px;"
+                class="w-100"
+                color="primary"
+                variant="elevated"
+                :loading="loading"
+                :disabled="!canCheck || loading"
+                @click="handleCheckAvailability"
+              >
                 Check
               </VBtn>
             </div>
           </div>
 
-          <div v-if="availability" class="result-bar" :class="{ 'is-available': availability.available }">
+          <div
+            v-if="availability"
+            class="result-bar"
+            :class="{ 'is-available': availability.available }"
+          >
             <div class="result-price">
               <span class="result-price-label">Total price</span>
               <span class="result-price-value">
                 {{ availability?.total_price ? formatCurrency(availability.total_price) : '—' }}
               </span>
             </div>
-            <span class="result-status" :class="availability.available ? 'ok' : 'no'">
+            <span
+              class="result-status"
+              :class="availability.available ? 'ok' : 'no'"
+            >
               {{ availabilityStatus }}
             </span>
-            <VBtn size="small" color="success" variant="elevated" :disabled="!availability.available" @click="handleReserve">
+            <VBtn
+              size="small"
+              color="success"
+              variant="elevated"
+              :disabled="!availability.available"
+              @click="handleReserve"
+            >
               Reserve
             </VBtn>
           </div>
 
-          <VAlert v-if="errorMessage" border="start" color="error" variant="tonal" density="compact" class="mt-3">
+          <VAlert
+            v-if="errorMessage"
+            border="start"
+            color="error"
+            variant="tonal"
+            density="compact"
+            class="mt-3"
+          >
             {{ errorMessage }}
           </VAlert>
         </VCardText>
@@ -247,7 +331,7 @@ watch(selectedCabinId, () => {
 
 <style scoped lang="scss">
 .booking-widget-page {
-  --widget-bg: #f4e9da;
+  --widget-bg: #fff;
   --widget-accent: #b88746;
   --widget-text: #2e2a27;
 
@@ -255,7 +339,7 @@ watch(selectedCabinId, () => {
   min-height: auto;
   padding: 0;
   margin: 0;
-  background-color: var(--widget-bg);
+  background-color: #fff !important;
   color: var(--widget-text);
   box-sizing: border-box;
 }
@@ -385,7 +469,7 @@ watch(selectedCabinId, () => {
 }
 
 :deep(.v-card) {
-  background-color: var(--widget-bg) !important;
+  background-color: #fff !important;
   color: var(--widget-text) !important;
 }
 

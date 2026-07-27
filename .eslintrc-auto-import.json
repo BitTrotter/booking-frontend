@@ -361,6 +361,7 @@
     "redirectToLogin": true,
     "ROUTE_PERMISSIONS": true,
     "getUserPermissions": true,
-    "hasPermission": true
+    "hasPermission": true,
+    "useWidgetHeightMessenger": true
   }
 }
