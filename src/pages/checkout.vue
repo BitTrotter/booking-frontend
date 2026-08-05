@@ -79,13 +79,39 @@ const totalNights = computed(() => {
   return diff > 0 ? diff : 0
 })
 
-const formatCurrency = amount => new Intl.NumberFormat('es-ES', {
+const formatCurrency = (amount, currency = 'USD') => new Intl.NumberFormat('es-ES', {
   style: 'currency',
-  currency: 'USD',
+  currency,
   maximumFractionDigits: 0,
 }).format(Number(amount || 0))
 
 const unwrapResponse = response => response?.data ?? response ?? null
+
+const displayCurrency = computed(() => {
+  if (paymentIntent.value?.currency)
+    return paymentIntent.value.currency.toUpperCase()
+
+  if (reservation.value?.currency)
+    return reservation.value.currency.toUpperCase()
+
+  return 'USD'
+})
+
+const displayTotal = computed(() => {
+  if (reservation.value?.total_price)
+    return Number(reservation.value.total_price)
+
+  if (paymentIntent.value?.amount)
+    return Number(paymentIntent.value.amount)
+
+  if (cabin.value?.total_price)
+    return Number(cabin.value.total_price)
+
+  if (cabin.value?.price_per_night && totalNights.value)
+    return Number(cabin.value.price_per_night) * totalNights.value
+
+  return 0
+})
 
 const loadStripeJs = () => new Promise((resolve, reject) => {
   if (window.Stripe) {
@@ -164,7 +190,6 @@ const guestFormValid = computed(() => {
 })
 
 const reservationReference = computed(() => reservation.value?.id || reservationIdQuery.value)
-const displayTotal = computed(() => reservation.value?.total_price || cabin.value?.total_price || 0)
 
 const loadReservationFromToken = async token => {
   loadingReservation.value = true
@@ -349,6 +374,11 @@ watch([cabinId, adults, children], () => {
 </script>
 
 <template>
+  <div class="checkout-header">
+
+
+    s
+  </div>
   <div class="checkout-page">
     <div class="checkout-shell">
       <VCard class="checkout-card" elevation="0">
@@ -442,25 +472,14 @@ watch([cabinId, adults, children], () => {
 
                   <div v-for="(guest, index) in guestRows" :key="`${guest.guest_type}-${index}`" class="guest-row">
                     <VTextField v-model="guest.full_name" label="Full name" density="comfortable" hide-details="auto" />
-                    <VSelect
-                      v-model="guest.guest_type"
+                    <VSelect v-model="guest.guest_type"
                       :items="[{ title: 'Adult', value: 'adult' }, { title: 'Child', value: 'child' }]"
-                      item-title="title"
-                      item-value="value"
-                      label="Type"
-                      density="comfortable"
-                      hide-details="auto"
-                    />
+                      item-title="title" item-value="value" label="Type" density="comfortable" hide-details="auto" />
                   </div>
                 </div>
 
-                <VBtn
-                  color="primary"
-                  class="w-100 mt-4"
-                  :loading="reservationSubmitting"
-                  :disabled="reservationSubmitting"
-                  @click="submitReservation"
-                >
+                <VBtn color="primary" class="w-100 mt-4" :loading="reservationSubmitting"
+                  :disabled="reservationSubmitting" @click="submitReservation">
                   Continue to payment
                 </VBtn>
               </VCardText>
@@ -480,24 +499,19 @@ watch([cabinId, adults, children], () => {
               <div v-if="reservation || hasExistingReservation" class="payment-meta">
                 <div>
                   <span>Total</span>
-                  <strong>{{ formatCurrency(displayTotal) }}</strong>
+                  <strong style="color: #2e2a27;">{{ formatCurrency(displayTotal, displayCurrency) }}</strong>
                 </div>
                 <div>
                   <span>Status</span>
-                  <strong>{{ reservation?.status || 'pending' }}</strong>
+                  <strong style="color: #2e2a27;">{{ reservation?.status || 'pending' }}</strong>
                 </div>
               </div>
 
               <div id="checkout-payment-element" class="payment-element" />
 
               <div class="payment-actions">
-                <VBtn
-                  color="primary"
-                  class="w-100"
-                  :loading="loadingIntent || paymentLoading"
-                  :disabled="loadingIntent || paymentLoading || !paymentIntent"
-                  @click="handlePay"
-                >
+                <VBtn color="primary" class="w-100" :loading="loadingIntent || paymentLoading"
+                  :disabled="loadingIntent || paymentLoading || !paymentIntent" @click="handlePay">
                   Pay now
                 </VBtn>
               </div>
@@ -515,18 +529,28 @@ watch([cabinId, adults, children], () => {
   padding: 24px;
   background:
     radial-gradient(circle at top left, rgba(184, 135, 70, 0.16), transparent 34%),
-    linear-gradient(180deg, #f4e9da 0%, #f7f0e6 100%);
+    linear-gradient(180deg, #fff 0%, #fff 100%);
   color: #2e2a27;
 }
 
 .checkout-shell {
   max-width: 960px;
   margin: 0 auto;
+
+}
+
+.checkout-header {
+  width: 100%;
+  height: 60px;
+  background-color: #f4e9da;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+
+
 }
 
 .checkout-card {
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.88);
+  background-color: #f4e9da;
   backdrop-filter: blur(12px);
 }
 
@@ -551,6 +575,7 @@ watch([cabinId, adults, children], () => {
   font-size: 1.7rem;
   font-weight: 900;
   line-height: 1.1;
+  color: #2e2a27;
 }
 
 .checkout-subtitle {
@@ -661,6 +686,7 @@ watch([cabinId, adults, children], () => {
 .payment-card__title {
   font-size: 1rem;
   font-weight: 800;
+  color: #2e2a27;
 }
 
 .payment-card__subtitle {
@@ -723,5 +749,7 @@ watch([cabinId, adults, children], () => {
   .guest-row {
     grid-template-columns: 1fr;
   }
+
+  /* Mobile-specific tweaks (header already styled globally) */
 }
 </style>
