@@ -62,7 +62,8 @@
                         <template #item.name="{ item }">
                             <div>
                                 <div class="font-weight-medium">{{ item.name }}</div>
-                                <div class="text-body-2 text-medium-emphasis text-truncate" style="max-width: 300px;" :title="item.description">{{ item.description }}</div>
+                                <div class="text-body-2 text-medium-emphasis text-truncate" style="max-width: 300px;"
+                                    :title="item.description">{{ item.description }}</div>
                             </div>
                         </template>
 
@@ -77,11 +78,14 @@
                         </template>
 
                         <template #item.features="{ item }">
-                            <div class="d-flex flex-wrap gap-2 py-2">
-                                <VChip v-for="(service, index) in item.features || []"
+                            <div class="d-flex flex-wrap gap-2 py-2 cabin-features-cell">
+                                <VChip v-for="(service, index) in item.features?.slice(0, 2) || []"
                                     :key="`${item.id}-${service}-${index}`" size="small" variant="tonal">
                                     {{ service.name }}
                                 </VChip>
+                                <span v-if="item.features?.length > 2" class="text-body-2 text-medium-emphasis">
+                                    +{{ item.features.length - 2 }} more
+                                </span>
                             </div>
                         </template>
 
@@ -124,7 +128,7 @@ const headers = [
     { title: 'Capacity', key: 'capacity' },
     { title: 'Beds', key: 'beds' },
     { title: 'Bathrooms', key: 'bathrooms' },
-    { title: 'features', key: 'features' },
+    { title: 'Features', key: 'features' },
     { title: 'Status', key: 'status' },
     { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ]
@@ -243,3 +247,19 @@ onMounted(() => {
 })
 
 </script>
+
+<style scoped>
+.cabin-features-cell {
+    max-width: 260px;
+    min-width: 160px;
+    overflow: hidden;
+}
+
+.cabin-features-cell .v-chip {
+    white-space: nowrap;
+}
+
+.cabin-features-cell span {
+    align-self: center;
+}
+</style>
