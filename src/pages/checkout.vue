@@ -63,10 +63,10 @@ const startDate = computed(() => queryValue('start_date'))
 const endDate = computed(() => queryValue('end_date'))
 const adults = computed(() => Math.max(1, queryNumber('adults') || 1))
 const children = computed(() => Math.max(0, queryNumber('children') || 0))
-const checkoutToken = computed(() => queryValue('token') || queryValue('checkout_token'))
+const confirmationToken = computed(() => queryValue('confirmation_token') || queryValue('token') || queryValue('checkout_token'))
 const reservationIdQuery = computed(() => queryNumber('reservation_id', 'reservationId'))
 const hasBookingDraft = computed(() => Boolean(cabinId.value && startDate.value && endDate.value))
-const hasExistingReservation = computed(() => Boolean(checkoutToken.value || reservationIdQuery.value))
+const hasExistingReservation = computed(() => Boolean(confirmationToken.value || reservationIdQuery.value))
 
 const totalNights = computed(() => {
   if (!startDate.value || !endDate.value)
@@ -206,7 +206,10 @@ const loadReservationFromToken = async token => {
 
     await router.replace({
       path: '/checkout',
-      query: { reservation_id: String(data.id) },
+      query: {
+        reservation_id: String(data.id),
+        confirmation_token: token,
+      },
     })
 
     return data.id
@@ -224,9 +227,17 @@ const createPaymentIntent = async reservationId => {
   paymentSuccess.value = ''
 
   try {
-    const response = await $api('/public/payments/intent', {
+    // Debug: log the reservation id being sent
+    // eslint-disable-next-line no-console
+    console.log('createPaymentIntent: reservationId=', reservationId)
+
+    // Some backends expect the reservation_id as a query param instead of JSON body.
+    // Send it both ways to increase compatibility.
+    const url = `/public/payments/intent?reservation_id=${encodeURIComponent(String(reservationId))}`
+
+    const response = await $api(url, {
       method: 'POST',
-      body: { reservation_id: reservationId },
+      body: { reservation_id: Number(reservationId) },
     })
 
     const intent = unwrapResponse(response)
@@ -244,8 +255,8 @@ const initializeCheckout = async () => {
   errorMessage.value = ''
 
   try {
-    if (checkoutToken.value) {
-      const reservationId = await loadReservationFromToken(checkoutToken.value)
+    if (confirmationToken.value) {
+      const reservationId = await loadReservationFromToken(confirmationToken.value)
       await createPaymentIntent(reservationId)
       return
     }
@@ -307,7 +318,7 @@ const submitReservation = async () => {
     })
 
     const tokenData = unwrapResponse(tokenResponse)
-    const checkoutTokenValue = tokenData?.checkout_token || tokenData?.token
+    const checkoutTokenValue = tokenData?.confirmation_token || tokenData?.checkout_token || tokenData?.token
 
     if (!checkoutTokenValue)
       throw new Error('Checkout token was not returned by the server.')
@@ -344,10 +355,22 @@ const handlePay = async () => {
     if (error)
       throw new Error(error.message)
 
-    if (confirmedIntent?.status === 'succeeded')
+    if (confirmedIntent?.status === 'succeeded') {
       paymentSuccess.value = 'Payment confirmed successfully.'
-    else
+      console.log('init post message')
+      window.parent.postMessage(
+        {
+
+          type: 'payment-success',
+          reservationId: reservation.value?.id || reservationIdQuery.value,
+          token: confirmationToken.value,
+        },
+        'https://rockycabinsretreat.webflow.io',
+      )
+      console.log('post message sent')
+    } else {
       paymentSuccess.value = `Payment status: ${confirmedIntent?.status || 'processing'}`
+    }
   } catch (error) {
     paymentError.value = error?.message || 'Payment could not be completed.'
   } finally {
