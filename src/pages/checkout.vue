@@ -1,7 +1,7 @@
 <script setup>
 import { $api } from '@/utils/api'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 definePage({
   meta: {
@@ -11,7 +11,6 @@ definePage({
 })
 
 const route = useRoute()
-const router = useRouter()
 
 const cabin = ref(null)
 const reservation = ref(null)
@@ -19,7 +18,6 @@ const guestEmail = ref('')
 const guestPhone = ref('')
 const guestRows = ref([])
 const loadingCabin = ref(false)
-const loadingReservation = ref(false)
 const reservationSubmitting = ref(false)
 const loadingIntent = ref(false)
 const paymentLoading = ref(false)
@@ -29,6 +27,7 @@ const reservationSuccess = ref('')
 const paymentError = ref('')
 const paymentSuccess = ref('')
 const paymentIntent = ref(null)
+const activeConfirmationToken = ref('')
 
 let stripeInstance = null
 let paymentElements = null
@@ -63,7 +62,7 @@ const startDate = computed(() => queryValue('start_date'))
 const endDate = computed(() => queryValue('end_date'))
 const adults = computed(() => Math.max(1, queryNumber('adults') || 1))
 const children = computed(() => Math.max(0, queryNumber('children') || 0))
-const confirmationToken = computed(() => queryValue('confirmation_token') || queryValue('token') || queryValue('checkout_token'))
+const confirmationToken = computed(() => queryValue('confirmation_token') || queryValue('token') || queryValue('checkout_token') || activeConfirmationToken.value)
 const reservationIdQuery = computed(() => queryNumber('reservation_id', 'reservationId'))
 const hasBookingDraft = computed(() => Boolean(cabinId.value && startDate.value && endDate.value))
 const hasExistingReservation = computed(() => Boolean(confirmationToken.value || reservationIdQuery.value))
@@ -191,35 +190,8 @@ const guestFormValid = computed(() => {
 
 const reservationReference = computed(() => reservation.value?.id || reservationIdQuery.value)
 
-const loadReservationFromToken = async token => {
-  loadingReservation.value = true
-  errorMessage.value = ''
-
-  try {
-    const response = await $api(`/public/checkout/reservations/${encodeURIComponent(token)}`)
-    const data = unwrapResponse(response)
-
-    if (!data?.id)
-      throw new Error('Reservation was not returned by the server.')
-
-    reservation.value = data
-
-    await router.replace({
-      path: '/checkout',
-      query: {
-        reservation_id: String(data.id),
-        confirmation_token: token,
-      },
-    })
-
-    return data.id
-  } finally {
-    loadingReservation.value = false
-  }
-}
-
-const createPaymentIntent = async reservationId => {
-  if (!reservationId)
+const createPaymentIntent = async (reservationId, token) => {
+  if (!reservationId || !token)
     throw new Error('Missing reservation reference.')
 
   loadingIntent.value = true
@@ -227,17 +199,12 @@ const createPaymentIntent = async reservationId => {
   paymentSuccess.value = ''
 
   try {
-    // Debug: log the reservation id being sent
-    // eslint-disable-next-line no-console
-    console.log('createPaymentIntent: reservationId=', reservationId)
-
-    // Some backends expect the reservation_id as a query param instead of JSON body.
-    // Send it both ways to increase compatibility.
-    const url = `/public/payments/intent?reservation_id=${encodeURIComponent(String(reservationId))}`
-
-    const response = await $api(url, {
+    const response = await $api('/public/payments/intent', {
       method: 'POST',
-      body: { reservation_id: Number(reservationId) },
+      body: {
+        reservation_id: Number(reservationId),
+        confirmation_token: token,
+      },
     })
 
     const intent = unwrapResponse(response)
@@ -245,6 +212,11 @@ const createPaymentIntent = async reservationId => {
       throw new Error('Payment intent was not returned by the server.')
 
     paymentIntent.value = intent
+    reservation.value = {
+      id: intent.reservation_id || reservationId,
+      total_price: intent.amount,
+      currency: intent.currency,
+    }
     await mountPaymentElement(intent.client_secret)
   } finally {
     loadingIntent.value = false
@@ -255,14 +227,11 @@ const initializeCheckout = async () => {
   errorMessage.value = ''
 
   try {
-    if (confirmationToken.value) {
-      const reservationId = await loadReservationFromToken(confirmationToken.value)
-      await createPaymentIntent(reservationId)
-      return
-    }
+    if (reservationIdQuery.value || confirmationToken.value) {
+      if (!reservationIdQuery.value || !confirmationToken.value)
+        throw new Error('The reservation_id and confirmation_token parameters are required.')
 
-    if (reservationIdQuery.value) {
-      await createPaymentIntent(reservationIdQuery.value)
+      await createPaymentIntent(reservationIdQuery.value, confirmationToken.value)
       return
     }
 
@@ -323,9 +292,9 @@ const submitReservation = async () => {
     if (!checkoutTokenValue)
       throw new Error('Checkout token was not returned by the server.')
 
+    activeConfirmationToken.value = checkoutTokenValue
     reservationSuccess.value = 'Reservation created. Preparing payment...'
-    const loadedReservationId = await loadReservationFromToken(checkoutTokenValue)
-    await createPaymentIntent(loadedReservationId)
+    await createPaymentIntent(createdReservationId, checkoutTokenValue)
   } catch (error) {
     reservationError.value = error?.message || 'Could not create reservation.'
   } finally {
