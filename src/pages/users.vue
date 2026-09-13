@@ -95,6 +95,7 @@
 <script setup>
 import AddUsers from '@/components/booking/role/AddUsers.vue'
 import EditUsers from '@/components/booking/role/EditUsers.vue'
+import { getUserData } from '@/utils/auth'
 import { computed, onMounted, ref, watch } from 'vue'
 
 const headers = [
@@ -116,13 +117,32 @@ const snackBar = ref({
   color: 'success',
 })
 
-const adminCount = computed(() => data.value.filter(user => user.roles?.includes('admin')).length)
-const regularCount = computed(() => data.value.length - adminCount.value)
+const isSuperAdmin = user =>
+  (user?.roles || []).some(role => {
+    const roleName = typeof role === 'string' ? role : role?.name
+
+    return String(roleName || '').toLowerCase().replace(/[-_]+/g, ' ').trim() === 'super admin'
+  })
+
+const loggedUser = (() => {
+  try {
+    return JSON.parse(getUserData() || 'null')
+  } catch {
+    return null
+  }
+})()
+
+const visibleUsers = computed(() =>
+  isSuperAdmin(loggedUser) ? data.value : data.value.filter(user => !isSuperAdmin(user)),
+)
+
+const adminCount = computed(() => visibleUsers.value.filter(user => user.roles?.includes('admin')).length)
+const regularCount = computed(() => visibleUsers.value.length - adminCount.value)
 
 const filteredUsers = computed(() => {
-  if (!searchQuery.value) return data.value
+  if (!searchQuery.value) return visibleUsers.value
   const query = searchQuery.value.toLowerCase()
-  return data.value.filter(user =>
+  return visibleUsers.value.filter(user =>
     [user.name, user.email].some(field => String(field || '').toLowerCase().includes(query)),
   )
 })

@@ -334,7 +334,8 @@ const handlePay = async () => {
           reservationId: reservation.value?.id || reservationIdQuery.value,
           token: confirmationToken.value,
         },
-        'https://rockycabinsretreat.webflow.io',
+        // 'https://rockycabinsretreat.webflow.io',
+        'https://www.rockycabinsretreat.com',
       )
       console.log('post message sent')
     } else {
