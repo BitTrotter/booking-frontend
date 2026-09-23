@@ -1,4 +1,5 @@
 <script setup>
+import logoFinal from '@images/logos/logo-final.png'
 import { $api } from '@/utils/api'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -17,7 +18,6 @@ const reservation = ref(null)
 const guestEmail = ref('')
 const guestPhone = ref('')
 const guestRows = ref([])
-const loadingCabin = ref(false)
 const reservationSubmitting = ref(false)
 const loadingIntent = ref(false)
 const paymentLoading = ref(false)
@@ -142,7 +142,24 @@ const mountPaymentElement = async clientSecret => {
 
   await loadStripeJs()
   stripeInstance = window.Stripe(stripePublishableKey.value)
-  paymentElements = stripeInstance.elements({ clientSecret })
+  // Stripe keeps ownership of its iframe inputs. Its Appearance API lets the
+  // payment form follow the checkout palette without changing its behaviour.
+  paymentElements = stripeInstance.elements({
+    clientSecret,
+    appearance: {
+      theme: 'flat',
+      variables: {
+        colorPrimary: '#203629',
+        colorBackground: '#FFFCF7',
+        colorText: '#203629',
+        colorTextSecondary: '#647174',
+        colorDanger: '#A23D35',
+        borderRadius: '4px',
+        fontFamily: 'Inter, Arial, sans-serif',
+        spacingUnit: '4px',
+      },
+    },
+  })
 
   await nextTick()
 
@@ -156,16 +173,12 @@ const loadCabinDetails = async () => {
     return
   }
 
-  loadingCabin.value = true
-
   try {
     const response = await $api(`/public/cabins/${cabinId.value}`)
     cabin.value = unwrapResponse(response)
   } catch (error) {
     cabin.value = null
     errorMessage.value = error?.message || 'Could not load cabin details.'
-  } finally {
-    loadingCabin.value = false
   }
 }
 
@@ -367,10 +380,10 @@ watch([cabinId, adults, children], () => {
 </script>
 
 <template>
-  <div class="checkout-header">
-
-
-    s
+  <div class="checkout-header" aria-label="Rocky Cabins Retreat">
+    <div class="checkout-header__inner">
+      <img :src="logoFinal" class="checkout-logo" alt="Rocky Cabins Retreat">
+    </div>
   </div>
   <div class="checkout-page">
     <div class="checkout-shell">
@@ -388,7 +401,7 @@ watch([cabinId, adults, children], () => {
                   : 'Fill in the guest details here, then we create the reservation and payment intent.' }}
               </div>
             </div>
-            <VChip color="primary" variant="tonal" label>
+            <VChip class="reservation-chip" variant="flat" label>
               {{ reservationReference ? `Reservation #${reservationReference}` : 'Pending' }}
             </VChip>
           </div>
@@ -397,12 +410,8 @@ watch([cabinId, adults, children], () => {
             {{ errorMessage }}
           </VAlert>
 
-          <div v-if="loadingCabin" class="loading-state">
-            Loading cabin details...
-          </div>
-
-          <div v-else class="checkout-body">
-            <VCard v-if="cabin" class="summary-card" variant="tonal">
+          <div class="checkout-body">
+            <VCard v-if="cabin" class="summary-card" variant="flat">
               <VCardText>
                 <div class="summary-grid">
                   <div class="summary-item">
@@ -450,7 +459,7 @@ watch([cabinId, adults, children], () => {
               Open this page from the booking widget to complete a new reservation, or provide a checkout token.
             </VAlert>
 
-            <VCard v-if="hasBookingDraft && !hasExistingReservation" class="form-card" variant="outlined">
+            <VCard v-if="hasBookingDraft && !hasExistingReservation" class="form-card" variant="flat">
               <VCardText>
                 <div class="form-card__title">Guest details</div>
                 <div class="form-grid">
@@ -471,7 +480,7 @@ watch([cabinId, adults, children], () => {
                   </div>
                 </div>
 
-                <VBtn color="primary" class="w-100 mt-4" :loading="reservationSubmitting"
+                <VBtn class="checkout-button w-100 mt-4" :loading="reservationSubmitting"
                   :disabled="reservationSubmitting" @click="submitReservation">
                   Continue to payment
                 </VBtn>
@@ -484,7 +493,7 @@ watch([cabinId, adults, children], () => {
                   <div class="payment-card__title">Payment method</div>
                   <div class="payment-card__subtitle">Powered by Stripe Elements</div>
                 </div>
-                <VChip v-if="paymentIntent" color="success" variant="tonal" label>
+                <VChip v-if="paymentIntent" class="intent-chip" variant="flat" label>
                   Intent ready
                 </VChip>
               </div>
@@ -492,18 +501,18 @@ watch([cabinId, adults, children], () => {
               <div v-if="reservation || hasExistingReservation" class="payment-meta">
                 <div>
                   <span>Total</span>
-                  <strong style="color: #2e2a27;">{{ formatCurrency(displayTotal, displayCurrency) }}</strong>
+                  <strong>{{ formatCurrency(displayTotal, displayCurrency) }}</strong>
                 </div>
                 <div>
                   <span>Status</span>
-                  <strong style="color: #2e2a27;">{{ reservation?.status || 'pending' }}</strong>
+                  <strong>{{ reservation?.status || 'pending' }}</strong>
                 </div>
               </div>
 
               <div id="checkout-payment-element" class="payment-element" />
 
               <div class="payment-actions">
-                <VBtn color="primary" class="w-100" :loading="loadingIntent || paymentLoading"
+                <VBtn class="checkout-button w-100" :loading="loadingIntent || paymentLoading"
                   :disabled="loadingIntent || paymentLoading || !paymentIntent" @click="handlePay">
                   Pay now
                 </VBtn>
@@ -518,12 +527,17 @@ watch([cabinId, adults, children], () => {
 
 <style scoped lang="scss">
 .checkout-page {
+  --forest: #203629;
+  --cream: #f3eadc;
+  --paper: #fffcf7;
+  --line: #d9cbb8;
+  --muted: #687577;
+  --accent: #a76132;
+
   min-height: 100vh;
-  padding: 24px;
-  background:
-    radial-gradient(circle at top left, rgba(184, 135, 70, 0.16), transparent 34%),
-    linear-gradient(180deg, #fff 0%, #fff 100%);
-  color: #2e2a27;
+  padding: 40px 24px 56px;
+  background-color: var(--cream);
+  color: var(--forest);
 }
 
 .checkout-shell {
@@ -534,17 +548,30 @@ watch([cabinId, adults, children], () => {
 
 .checkout-header {
   width: 100%;
-  height: 60px;
-  background-color: #f4e9da;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  padding: 8px 24px;
+  background-color: #203629;
+}
 
+.checkout-header__inner {
+  display: flex;
+  align-items: center;
+  max-width: 960px;
+  height: 44px;
+  margin: 0 auto;
+}
 
+.checkout-logo {
+  display: block;
+  width: auto;
+  height: 42px;
+  object-fit: contain;
 }
 
 .checkout-card {
-  border-radius: 24px;
-  background-color: #f4e9da;
-  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background-color: var(--paper);
+  box-shadow: 0 10px 30px rgba(30, 49, 51, 0.08);
 }
 
 .checkout-hero {
@@ -560,26 +587,22 @@ watch([cabinId, adults, children], () => {
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #a06d2e;
+  color: var(--accent);
 }
 
 .checkout-title {
   margin-top: 6px;
   font-size: 1.7rem;
-  font-weight: 900;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
   line-height: 1.1;
-  color: #2e2a27;
+  color: var(--forest);
 }
 
 .checkout-subtitle {
   max-width: 64ch;
   margin-top: 8px;
-  color: #7f6b57;
-}
-
-.loading-state {
-  padding: 16px 0;
-  color: #7f6b57;
+  color: var(--muted);
 }
 
 .checkout-body {
@@ -589,8 +612,9 @@ watch([cabinId, adults, children], () => {
 }
 
 .summary-card {
-  border-radius: 18px;
-  background: rgba(250, 247, 243, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #faf4e9;
 }
 
 .summary-grid {
@@ -610,23 +634,27 @@ watch([cabinId, adults, children], () => {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8a7050;
+  color: var(--accent);
 }
 
 .summary-item strong {
   font-size: 0.96rem;
-  color: #2e2a27;
+  color: var(--forest);
   overflow-wrap: anywhere;
 }
 
 .form-card {
-  border-radius: 18px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
 }
 
 .form-card__title {
   margin-bottom: 14px;
+  color: var(--forest);
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .form-grid {
@@ -650,6 +678,8 @@ watch([cabinId, adults, children], () => {
 }
 
 .guest-section__title {
+  color: var(--forest);
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 0.95rem;
   font-weight: 700;
 }
@@ -663,9 +693,9 @@ watch([cabinId, adults, children], () => {
 
 .payment-card {
   padding: 18px;
-  border: 1px solid #e8dfd6;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #fff 0%, #fcf7f2 100%);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
 }
 
 .payment-card__header {
@@ -677,15 +707,16 @@ watch([cabinId, adults, children], () => {
 }
 
 .payment-card__title {
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 1rem;
-  font-weight: 800;
-  color: #2e2a27;
+  font-weight: 700;
+  color: var(--forest);
 }
 
 .payment-card__subtitle {
   margin-top: 4px;
   font-size: 0.88rem;
-  color: #7f6b57;
+  color: var(--muted);
 }
 
 .payment-meta {
@@ -694,8 +725,9 @@ watch([cabinId, adults, children], () => {
   gap: 12px;
   margin-bottom: 14px;
   padding: 12px 14px;
-  border-radius: 14px;
-  background: #faf7f3;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #faf4e9;
 }
 
 .payment-meta span {
@@ -705,18 +737,19 @@ watch([cabinId, adults, children], () => {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8a7050;
+  color: var(--accent);
 }
 
 .payment-meta strong {
   font-size: 0.96rem;
+  color: var(--forest);
 }
 
 .payment-element {
   min-height: 72px;
   padding: 14px;
-  border: 1px solid #e2d3c2;
-  border-radius: 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
   background: #fff;
 }
 
@@ -724,9 +757,54 @@ watch([cabinId, adults, children], () => {
   margin-top: 14px;
 }
 
+.reservation-chip,
+.intent-chip {
+  border: 1px solid #b4c09e;
+  border-radius: 4px;
+  background: #edf1e6;
+  color: var(--forest);
+  font-weight: 700;
+}
+
+.checkout-button {
+  border-radius: 4px;
+  background: var(--forest) !important;
+  box-shadow: none;
+  color: var(--cream) !important;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+.checkout-button:hover {
+  background: #294347 !important;
+}
+
+:deep(.v-field) {
+  border-radius: 4px;
+  color: var(--forest);
+}
+
+:deep(.v-field__outline) {
+  --v-field-border-opacity: 1;
+  color: var(--line);
+}
+
+:deep(.v-label),
+:deep(.v-field__input) {
+  color: var(--forest);
+}
+
+:deep(.v-alert) {
+  border-radius: 4px;
+}
+
 @media (max-width: 720px) {
+  .checkout-header {
+    padding-inline: 14px;
+  }
+
   .checkout-page {
-    padding: 14px;
+    padding: 24px 14px 40px;
   }
 
   .checkout-hero {

@@ -194,155 +194,58 @@ watch(() => props.reservation, reservation => {
 </script>
 
 <template>
-  <AppFormDialog
-    :model-value="props.isDialogVisible"
-    title="Edit Reservation"
-    subtitle="Update the cabin, stay dates, reservation status, and guest list."
-    :max-width="860"
-    submit-text="Save changes"
-    delete-text="Delete reservation"
-    show-delete
-    validate-on-submit
-    :loading="isSubmitting"
-    :delete-loading="isDeleting"
-    :can-submit="canSubmit"
-    @update:model-value="dialogVisibleUpdate"
-    @submit="submitReservation"
-    @delete="deleteReservation"
-  >
+  <AppFormDialog :model-value="props.isDialogVisible" title="Edit Reservation"
+    subtitle="Update the cabin, stay dates, reservation status, and guest list." :max-width="860"
+    submit-text="Save changes" delete-text="Delete reservation" show-delete validate-on-submit :loading="isSubmitting"
+    :delete-loading="isDeleting" :can-submit="canSubmit" @update:model-value="dialogVisibleUpdate"
+    @submit="submitReservation" @delete="deleteReservation">
     <VRow>
-      <VCol
-        cols="12"
-        md="5"
-      >
-        <VSelect
-          v-model="selectedCabinId"
-          :items="cabinItems"
-          item-title="name"
-          item-value="id"
-          label="Cabin"
-          placeholder="Select cabin"
-          :rules="[requiredValidator]"
-          required
-        />
+      <VCol cols="12" md="4">
+        <VSelect v-model="selectedCabinId" :items="cabinItems" item-title="name" item-value="id" label="Cabin"
+          placeholder="Select cabin" :rules="[requiredValidator]" required />
       </VCol>
-      <VCol
-        cols="12"
-        md="3"
-      >
-        <AppDateTimePicker
-          v-model="startDate"
-          label="Start date"
-          placeholder="YYYY-MM-DD"
-          :rules="[requiredValidator]"
-        />
+      <VCol cols="12" md="3">
+        <AppDateTimePicker v-model="startDate" label="Start date" placeholder="YYYY-MM-DD"
+          :rules="[requiredValidator]" />
       </VCol>
-      <VCol
-        cols="12"
-        md="3"
-      >
-        <AppDateTimePicker
-          v-model="endDate"
-          label="End date"
-          placeholder="YYYY-MM-DD"
-          :rules="[requiredValidator]"
-        />
+      <VCol cols="12" md="3">
+        <AppDateTimePicker v-model="endDate" label="End date" placeholder="YYYY-MM-DD" :rules="[requiredValidator]" />
       </VCol>
-      <VCol
-        cols="12"
-        md="1"
-      >
-        <VSelect
-          v-model="status"
-          :items="statusItems"
-          label="Status"
-          :rules="[requiredValidator]"
-          required
-        />
+      <VCol cols="12" md="5">
+        <VSelect v-model="status" :items="statusItems" label="Status" :rules="[requiredValidator]" required />
       </VCol>
     </VRow>
 
     <VRow class="mt-0">
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <VTextField
-          v-model="phone"
-          label="Phone"
-          placeholder="Guest phone number"
-          prepend-inner-icon="ri-phone-line"
-        />
+      <VCol cols="12" md="6">
+        <VTextField v-model="phone" label="Phone" placeholder="Guest phone number" prepend-inner-icon="ri-phone-line" />
       </VCol>
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <VTextField
-          v-model="email"
-          label="Email"
-          placeholder="Guest email address"
-          prepend-inner-icon="ri-mail-line"
-          type="email"
-        />
+      <VCol cols="12" md="6">
+        <VTextField v-model="email" label="Email" placeholder="Guest email address" prepend-inner-icon="ri-mail-line"
+          type="email" />
       </VCol>
     </VRow>
 
-    <VCard
-      variant="tonal"
-      class="mt-2"
-    >
+    <VCard variant="tonal" class="mt-2">
       <VCardText class="pa-4">
         <div class="d-flex align-center justify-space-between mb-4">
           <span class="text-subtitle-1 font-weight-medium">Guests</span>
-          <VBtn
-            size="small"
-            variant="outlined"
-            prepend-icon="ri-user-add-line"
-            @click="addGuest"
-          >
+          <VBtn size="small" variant="outlined" prepend-icon="ri-user-add-line" @click="addGuest">
             Add guest
           </VBtn>
         </div>
 
-        <VRow
-          v-for="(guest, index) in guests"
-          :key="index"
-          class="align-center"
-        >
-          <VCol
-            cols="12"
-            md="7"
-          >
-            <VTextField
-              v-model="guest.full_name"
-              label="Full name"
-              placeholder="Guest full name"
-              :rules="[requiredValidator]"
-              required
-            />
+        <VRow v-for="(guest, index) in guests" :key="index" class="align-center">
+          <VCol cols="12" md="7">
+            <VTextField v-model="guest.full_name" label="Full name" placeholder="Guest full name"
+              :rules="[requiredValidator]" required />
           </VCol>
-          <VCol
-            cols="9"
-            md="4"
-          >
-            <VSelect
-              v-model="guest.guest_type"
-              :items="['adult', 'child']"
-              label="Type"
-              :rules="[requiredValidator]"
-              required
-            />
+          <VCol cols="9" md="4">
+            <VSelect v-model="guest.guest_type" :items="['adult', 'child']" label="Type" :rules="[requiredValidator]"
+              required />
           </VCol>
-          <VCol
-            cols="3"
-            md="1"
-            class="text-end"
-          >
-            <IconBtn
-              :disabled="guests.length === 1"
-              @click="removeGuest(index)"
-            >
+          <VCol cols="3" md="1" class="text-end">
+            <IconBtn :disabled="guests.length === 1" @click="removeGuest(index)">
               <VIcon icon="ri-delete-bin-7-line" />
             </IconBtn>
           </VCol>
@@ -350,12 +253,7 @@ watch(() => props.reservation, reservation => {
       </VCardText>
     </VCard>
 
-    <VAlert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      class="mt-4"
-    >
+    <VAlert v-if="errorMessage" type="error" variant="tonal" class="mt-4">
       {{ errorMessage }}
     </VAlert>
   </AppFormDialog>
