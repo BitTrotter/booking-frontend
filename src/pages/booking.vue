@@ -53,7 +53,23 @@
         </VRow>
 
         <VCard variant="outlined">
-          <VDataTable :headers="headers" :items="data" :items-per-page="8" class="text-no-wrap" :loading="loading">
+          <VCardText class="d-flex flex-wrap align-center justify-space-between gap-3 pb-2">
+            <div>
+              <div class="text-subtitle-1 font-weight-medium">Reservation list</div>
+              <div class="text-caption text-medium-emphasis">Filter by arrival date, status, or creation time.</div>
+            </div>
+            <VBtnToggle v-model="listView" class="reservation-filter-toggle d-none d-md-flex" color="primary"
+              density="comfortable" mandatory>
+              <VBtn value="all" prepend-icon="ri-list-check">All</VBtn>
+              <VBtn value="recent" prepend-icon="ri-time-line">Recently created</VBtn>
+              <VBtn value="upcoming" prepend-icon="ri-calendar-event-line">Upcoming</VBtn>
+              <VBtn value="active" prepend-icon="ri-checkbox-circle-line">Active</VBtn>
+              <VBtn value="cancelled" prepend-icon="ri-close-circle-line">Cancelled</VBtn>
+            </VBtnToggle>
+            <VSelect v-model="listView" class="d-flex d-md-none reservation-filter-select" :items="listViewItems"
+              label="Show reservations" density="comfortable" hide-details />
+          </VCardText>
+          <VDataTable :headers="headers" :items="visibleReservations" :items-per-page="8" class="text-no-wrap" :loading="loading">
             <template #item.id="{ item }">
               <div class="font-weight-medium">#{{ item.id }}</div>
             </template>
@@ -62,7 +78,7 @@
               <div>
                 <div class="font-weight-medium">{{ item.cabin?.name || 'No cabin assigned' }}</div>
                 <div class="text-body-2 text-medium-emphasis">
-                  {{ item.guests?.length || 0 }} guest<span v-if="(item.guests?.length || 0) !== 1">s</span>
+                  {{ item.guest_number ?? item.guests?.length ?? 0 }} guest<span v-if="(item.guest_number ?? item.guests?.length ?? 0) !== 1">s</span>
                 </div>
               </div>
             </template>
@@ -104,7 +120,7 @@
                   <VIcon icon="ri-eye-line" size="18" />
                   <VTooltip activator="parent">View details</VTooltip>
                 </VBtn>
-                <VBtn icon variant="text" size="small" color="primary" @click="openEdit(item)">
+                <VBtn icon variant="text" size="small" color="primary" :disabled="item.status === 'cancelled'" @click="openEdit(item)">
                   <VIcon icon="ri-pencil-line" size="18" />
                   <VTooltip activator="parent">Edit</VTooltip>
                 </VBtn>
@@ -142,6 +158,14 @@ const headers = [
 ]
 
 const searchQuery = ref('')
+const listView = ref('all')
+const listViewItems = [
+  { title: 'All except cancelled', value: 'all' },
+  { title: 'Recently created', value: 'recent' },
+  { title: 'Upcoming arrivals', value: 'upcoming' },
+  { title: 'Active reservations', value: 'active' },
+  { title: 'Cancelled reservations', value: 'cancelled' },
+]
 const isAddReservationDialogVisible = ref(false)
 const isEditReservationDialogVisible = ref(false)
 const isDetailDialogVisible = ref(false)
@@ -151,6 +175,29 @@ const selectedReservation = ref(null)
 const loading = ref(false)
 const confirmedReservations = computed(() => data.value.filter(item => item.status === 'confirmed').length)
 const pendingReservations = computed(() => data.value.filter(item => item.status === 'pending').length)
+const activeStatuses = ['pending', 'confirmed']
+const reservationStart = item => new Date(item.start_date || item.start).getTime()
+const visibleReservations = computed(() => {
+  if (listView.value === 'cancelled')
+    return data.value.filter(item => item.status === 'cancelled')
+
+  const reservations = data.value.filter(item => item.status !== 'cancelled')
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayTime = today.getTime()
+  const active = reservations.filter(item => activeStatuses.includes(item.status))
+
+  if (listView.value === 'recent')
+    return [...reservations].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+
+  if (listView.value === 'upcoming')
+    return active.filter(item => reservationStart(item) >= todayTime).sort((a, b) => reservationStart(a) - reservationStart(b))
+
+  if (listView.value === 'active')
+    return [...active].sort((a, b) => reservationStart(a) - reservationStart(b))
+
+  return reservations
+})
 
 const getPaymentStatusColor = status => ({
   paid: 'success',
@@ -214,6 +261,9 @@ const list = async () => {
 }
 
 const openEdit = item => {
+  if (item.status === 'cancelled')
+    return
+
   selectedReservation.value = item
   isEditReservationDialogVisible.value = true
 }
@@ -239,3 +289,33 @@ watch(isEditReservationDialogVisible, visible => {
 
 
 </script>
+
+<style scoped>
+.reservation-filter-toggle.v-btn-group {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 4px;
+  block-size: auto;
+  height: auto;
+  max-inline-size: 100%;
+}
+
+.reservation-filter-toggle.v-btn-group :deep(.v-btn) {
+  flex: 0 0 auto;
+  /* The theme sizes toggle buttons as squares for icon-only controls. */
+  inline-size: auto !important;
+  padding-inline: 16px;
+}
+
+.reservation-filter-select {
+  flex: 1 1 100%;
+  min-inline-size: 220px;
+  max-inline-size: 100%;
+}
+
+@media (min-width: 960px) {
+  .reservation-filter-select {
+    display: none !important;
+  }
+}
+</style>

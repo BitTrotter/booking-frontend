@@ -35,6 +35,9 @@ const openReservationForDate = info => {
 }
 
 const openReservationForEvent = reservation => {
+  if (reservation.status === 'cancelled')
+    return
+
   selectedReservation.value = reservation
   isEditReservationDialogVisible.value = true
 }
