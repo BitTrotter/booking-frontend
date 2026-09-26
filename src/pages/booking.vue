@@ -11,9 +11,6 @@
           </div>
 
           <div class="d-flex gap-3 align-center flex-wrap">
-            <VTextField v-model="searchQuery" placeholder="Search reservation" prepend-inner-icon="ri-search-line"
-              density="comfortable" style="inline-size: 280px;" hide-details @update:model-value="list" />
-
             <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddReservationDialogVisible = true">
               Create Reservation
             </VBtn>
@@ -69,26 +66,32 @@
             <VSelect v-model="listView" class="d-flex d-md-none reservation-filter-select" :items="listViewItems"
               label="Show reservations" density="comfortable" hide-details />
           </VCardText>
-          <VDataTable :headers="headers" :items="visibleReservations" :items-per-page="8" class="text-no-wrap" :loading="loading">
-            <template #item.id="{ item }">
-              <div class="font-weight-medium">#{{ item.id }}</div>
+          <VCardText class="pt-2">
+            <VTextField v-model="searchQuery" label="Search reservations"
+              placeholder="Booking code, guest name, or cabin" prepend-inner-icon="ri-search-line"
+              density="comfortable" clearable hide-details />
+          </VCardText>
+          <VDataTable :headers="headers" :items="visibleReservations" :items-per-page="8" class="text-no-wrap" :loading="loading"
+            no-data-text="No reservations match the selected filters.">
+            <template #item.public_code="{ item }">
+              <div class="font-weight-bold text-primary">{{ item.public_code || '—' }}</div>
             </template>
 
             <template #item.cabin="{ item }">
+              <div class="font-weight-medium">{{ item.cabin?.name || 'No cabin assigned' }}</div>
+            </template>
+
+            <template #item.full_name="{ item }">
               <div>
-                <div class="font-weight-medium">{{ item.cabin?.name || 'No cabin assigned' }}</div>
+                <div class="font-weight-medium">{{ getGuestName(item) }}</div>
                 <div class="text-body-2 text-medium-emphasis">
                   {{ item.guest_number ?? item.guests?.length ?? 0 }} guest<span v-if="(item.guest_number ?? item.guests?.length ?? 0) !== 1">s</span>
                 </div>
               </div>
             </template>
 
-            <template #item.start="{ item }">
-              {{ formatDate(item.start || item.start_date) }}
-            </template>
-
-            <template #item.end="{ item }">
-              {{ formatDate(item.end || item.end_date) }}
+            <template #item.stay_dates="{ item }">
+              {{ formatStayDates(item) }}
             </template>
 
             <template #item.total_price="{ item }">
@@ -96,18 +99,14 @@
             </template>
 
             <template #item.status="{ item }">
-              <VChip :color="getStatusColor(item.status)" size="small" label>
+              <VChip :color="getStatusColor(item.status)" size="small" label class="text-capitalize">
                 {{ item.status || 'unknown' }}
               </VChip>
             </template>
 
-            <template #item.created_at="{ item }">
-              {{ formatDate(item.created_at) }}
-            </template>
-
             <template #item.payment_status="{ item }">
               <VChip v-if="paymentsMap[item.id]" :color="getPaymentStatusColor(paymentsMap[item.id].status)"
-                size="small" label>
+                size="small" label class="text-capitalize">
                 <VIcon :icon="getPaymentStatusIcon(paymentsMap[item.id].status)" size="14" class="me-1" />
                 {{ paymentsMap[item.id].status }}
               </VChip>
@@ -146,12 +145,11 @@ import ReservationDetail from '@/components/booking/ReservationDetail.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 
 const headers = [
-  { title: 'Reservation', key: 'id' },
-  { title: 'Reservation Date', key: 'created_at' },
-  { title: 'Cabin', key: 'cabin' },
-  { title: 'Start Date', key: 'start' },
-  { title: 'End Date', key: 'end' },
-  { title: 'Total Price', key: 'total_price' },
+  { title: 'Booking', key: 'public_code' },
+  { title: 'Cabin', key: 'cabin', value: 'cabin.name' },
+  { title: 'Guest', key: 'full_name', value: item => getGuestName(item) },
+  { title: 'Stay dates', key: 'stay_dates', value: item => reservationStart(item) },
+  { title: 'Total', key: 'total_price' },
   { title: 'Status', key: 'status' },
   { title: 'Payment', key: 'payment_status' },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
@@ -177,11 +175,22 @@ const confirmedReservations = computed(() => data.value.filter(item => item.stat
 const pendingReservations = computed(() => data.value.filter(item => item.status === 'pending').length)
 const activeStatuses = ['pending', 'confirmed']
 const reservationStart = item => new Date(item.start_date || item.start).getTime()
+const normalizeSearch = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+const searchedReservations = computed(() => {
+  const query = normalizeSearch(searchQuery.value)
+  if (!query) return data.value
+
+  return data.value.filter(item => [
+    item.public_code,
+    getGuestName(item),
+    item.cabin?.name,
+  ].some(value => normalizeSearch(value).includes(query)))
+})
 const visibleReservations = computed(() => {
   if (listView.value === 'cancelled')
-    return data.value.filter(item => item.status === 'cancelled')
+    return searchedReservations.value.filter(item => item.status === 'cancelled')
 
-  const reservations = data.value.filter(item => item.status !== 'cancelled')
+  const reservations = searchedReservations.value.filter(item => item.status !== 'cancelled')
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const todayTime = today.getTime()
@@ -214,12 +223,23 @@ const getPaymentStatusIcon = status => ({
 }[status] || 'ri-bank-card-line')
 
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+const getGuestName = item => item.full_name || item.guests?.[0]?.full_name || item.guests?.[0]?.name || '—'
+
+const formatStayDates = item => {
+  // Treat stay dates as calendar days, avoiding timezone shifts for YYYY-MM-DD.
+  const parseDate = value => value ? new Date(`${String(value).slice(0, 10)}T00:00:00`) : null
+  const start = parseDate(item.start_date || item.start)
+  const end = parseDate(item.end_date || item.end)
+  const validStart = start && !Number.isNaN(start.getTime())
+  const validEnd = end && !Number.isNaN(end.getTime())
+  const format = (date, includeYear = true) => date.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', ...(includeYear ? { year: 'numeric' } : {}),
   })
+
+  if (!validStart || !validEnd)
+    return `${validStart ? format(start) : '—'} – ${validEnd ? format(end) : '—'}`
+
+  return `${format(start, start.getFullYear() !== end.getFullYear())} – ${format(end)}`
 }
 const formatCurrency = amount => {
   const parsedAmount = Number(amount || 0)
@@ -227,6 +247,7 @@ const formatCurrency = amount => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
+    minimumFractionDigits: Number.isInteger(parsedAmount) ? 0 : 2,
   }).format(parsedAmount)
 }
 
@@ -245,7 +266,7 @@ const list = async () => {
   loading.value = true
 
   const [resp, payments] = await Promise.all([
-    $api(`/reservations?search=${encodeURIComponent(searchQuery.value || '')}`, {
+    $api('/reservations', {
       method: 'GET',
       onResponseError: ({ response }) => { throw new Error(response.statusText || 'Failed to load reservations') },
     }),
