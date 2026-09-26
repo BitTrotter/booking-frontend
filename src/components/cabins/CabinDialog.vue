@@ -44,6 +44,27 @@ const starDate = ref(null)
 const endDate = ref(null)
 const minNights = ref(null)
 const ruleStatus = ref(true)
+const priceRules = ref([])
+const priceRuleError = ref('')
+const deletingPriceRuleId = ref(null)
+const ruleDateRange = computed({
+  get: () => [starDate.value, endDate.value].filter(Boolean).join(' to '),
+  set: value => {
+    const [start = '', end = ''] = String(value || '').split(' to ')
+    starDate.value = start || null
+    endDate.value = end || null
+  },
+})
+const ruleDateConfig = { mode: 'range', dateFormat: 'Y-m-d', showMonths: 2 }
+const validRuleDates = () => {
+  if (typeRule.value === 'weekend' && !starDate.value && !endDate.value)
+    return true
+
+  return Boolean(starDate.value && endDate.value && endDate.value >= starDate.value)
+    || 'Select a valid start and end date.'
+}
+const formatRuleDate = value => value ? new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString('en-US') : '—'
+const formatRulePrice = value => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))
 
 const images = ref([])
 const imagesBaseUrl = import.meta.env.VITE_IMAGES_BASE_URL
@@ -98,6 +119,13 @@ const resetForm = () => {
   selectedFeatures.value = []
   status.value = 'available'
   images.value = []
+  priceRules.value = []
+  priceRuleError.value = ''
+  typeRule.value = null
+  typeRulePrice.value = null
+  ruleDateRange.value = ''
+  minNights.value = null
+  ruleStatus.value = true
   showNewFeatureForm.value = false
   newFeatureName.value = ''
   activeTab.value = 0
@@ -198,7 +226,28 @@ const uploadImages = async () => {
 
 // ─── Price Rules ──────────────────────────────────────────────────────────────
 
+const deletePriceRule = async rule => {
+  if (!rule?.id || deletingPriceRuleId.value !== null || submittingRule.value) return
+  if (!confirm('Are you sure you want to delete this price rule?')) return
+
+  const cabinId = props.cabin?.id
+  deletingPriceRuleId.value = rule.id
+  priceRuleError.value = ''
+  try {
+    await $api(`/price-rules/${rule.id}`, { method: 'DELETE' })
+    if (props.cabin?.id === cabinId)
+      priceRules.value = priceRules.value.filter(item => item.id !== rule.id)
+  } catch (error) {
+    if (props.cabin?.id === cabinId)
+      priceRuleError.value = error?.data?.message || error?.message || 'Could not delete the price rule.'
+  } finally {
+    deletingPriceRuleId.value = null
+  }
+}
+
 const submitRulePrice = async () => {
+  if (deletingPriceRuleId.value !== null || submittingRule.value) return
+  priceRuleError.value = ''
   const validation = await refPriceRuleForm.value?.validate()
   if (!validation?.valid) return
 
@@ -207,8 +256,8 @@ const submitRulePrice = async () => {
   const priceRulesPayload = {
     type: typeRule.value,
     price_per_night: typeRulePrice.value,
-    start_date: starDate.value,
-    end_date: endDate.value,
+    start_date: starDate.value || null,
+    end_date: endDate.value || null,
     min_nights: minNights.value,
     status: ruleStatus.value,
   }
@@ -222,7 +271,11 @@ const submitRulePrice = async () => {
       },
     })
     refPriceRuleForm.value?.reset()
+    ruleStatus.value = true
+    const response = await $api(`/cabins/${props.cabin.id}`)
+    priceRules.value = (response?.data ?? response)?.price_rules || []
   } catch (error) {
+    priceRuleError.value = error?.message || 'Could not save or refresh price rules.'
     console.error('Error submitting price rule:', error)
   } finally {
     submittingRule.value = false
@@ -266,13 +319,15 @@ const createFeature = async () => {
 // ─── Cabin ────────────────────────────────────────────────────────────────────
 
 const loadCabinDetails = async () => {
-  const dataCabin = await $api(`/cabins/${props.cabin.id}`, {
+  const response = await $api(`/cabins/${props.cabin.id}`, {
     method: 'GET',
     onResponseError: ({ response }) => {
       throw new Error(response.statusText || 'Error loading cabin')
     },
   })
 
+  const dataCabin = response?.data ?? response
+  priceRules.value = Array.isArray(dataCabin.price_rules) ? dataCabin.price_rules : []
   name.value = dataCabin.name
   description_title.value = dataCabin.description_title ?? ''
   description.value = dataCabin.description
@@ -722,6 +777,42 @@ onUnmounted(() => destroyMap())
 
         <!-- ── Tab 5: Price Rules ─────────────────────────────────────────── -->
         <div v-show="activeTab === 5">
+          <div class="d-flex align-center gap-2 mb-4">
+            <span class="text-subtitle-1 font-weight-semibold">Price Rules</span>
+            <VChip size="small" color="primary" variant="tonal">{{ priceRules.length }}</VChip>
+          </div>
+          <VTable v-if="priceRules.length" class="text-no-wrap mb-6" density="comfortable">
+            <thead>
+              <tr>
+                <th>Type</th><th>Price / night</th><th>Start date</th><th>End date</th>
+                <th>Days</th><th>Minimum nights</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="rule in priceRules" :key="rule.id">
+                <td>{{ priceRuleTypes.find(item => item.value === rule.type)?.title || rule.type }}</td>
+                <td>${{ formatRulePrice(rule.price_per_night) }}</td>
+                <td>{{ formatRuleDate(rule.start_date) }}</td>
+                <td>{{ formatRuleDate(rule.end_date) }}</td>
+                <td>{{ Array.isArray(rule.days) ? rule.days.join(', ') : rule.days ?? '—' }}</td>
+                <td>{{ rule.min_nights ?? '—' }}</td>
+                <td><VChip :color="rule.active ? 'success' : 'secondary'" size="small" variant="tonal">
+                  {{ rule.active ? 'Active' : 'Inactive' }}
+                </VChip></td>
+                <td>
+                  <VBtn color="error" variant="tonal" size="small" prepend-icon="ri-delete-bin-line"
+                    :loading="deletingPriceRuleId === rule.id"
+                    :disabled="submittingRule || (deletingPriceRuleId !== null && deletingPriceRuleId !== rule.id)"
+                    @click="deletePriceRule(rule)">
+                    Delete
+                  </VBtn>
+                </td>
+              </tr>
+            </tbody>
+          </VTable>
+          <VAlert v-else type="info" variant="tonal" class="mb-6">No price rules for this cabin yet.</VAlert>
+          <VDivider class="mb-6" />
+          <VAlert v-if="priceRuleError" type="error" variant="tonal" class="mb-4">{{ priceRuleError }}</VAlert>
           <VForm ref="refPriceRuleForm">
             <div class="d-flex align-center gap-2 mb-4">
               <VIcon size="18" color="primary">ri-price-tag-3-line</VIcon>
@@ -736,15 +827,15 @@ onUnmounted(() => destroyMap())
                 <VTextField v-model="typeRulePrice" label="Rule price per night" type="number" prefix="$" min="0"
                   :rules="[requiredValidator]" />
               </VCol>
-              <VCol cols="12" md="6">
-                <VTextField v-model="starDate" label="Start date" type="date" :rules="[requiredValidator]" />
-              </VCol>
-              <VCol cols="12" md="6">
-                <VTextField v-model="endDate" label="End date" type="date" :rules="[requiredValidator]" />
+              <VCol cols="12">
+                <AppDateTimePicker v-if="activeTab === 5" v-model="ruleDateRange" :config="ruleDateConfig"
+                  :label="typeRule === 'weekend' ? 'Start date / end date (optional)' : 'Start date / end date'"
+                  placeholder="Select the rule dates" clearable
+                  prepend-inner-icon="ri-calendar-event-line" :rules="[validRuleDates]" />
               </VCol>
               <VCol cols="12" md="6">
                 <VTextField v-model="minNights" label="Minimum nights" type="number" min="1"
-                  :rules="[requiredValidator]" />
+                  :rules="typeRule === 'min_nights' ? [requiredValidator] : []" />
               </VCol>
               <VCol cols="12" md="6">
                 <VSelect v-model="ruleStatus" label="Rule status" :items="[
@@ -756,6 +847,7 @@ onUnmounted(() => destroyMap())
 
             <div class="pt-2 pb-1">
               <VBtn variant="tonal" color="primary" prepend-icon="ri-price-tag-3-line" :loading="submittingRule"
+                :disabled="deletingPriceRuleId !== null"
                 @click="submitRulePrice">
                 Save Price Rule
               </VBtn>

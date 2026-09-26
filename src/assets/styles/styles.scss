@@ -1,1 +1,92 @@
-// Write your overrides
+// Shared panel finishes. Theme variables also follow dialogs rendered in overlays.
+.v-application {
+  background: rgb(var(--v-theme-background));
+}
+
+.layout-wrapper {
+  .text-h4,
+  .text-h5,
+  .app-title {
+    font-family: Georgia, "Times New Roman", serif !important;
+    letter-spacing: -0.025em !important;
+  }
+}
+
+.v-card {
+  border-radius: 12px;
+}
+
+.v-card:not(.v-card--variant-tonal):not(.v-card--variant-outlined):not(.v-card--flat) {
+  box-shadow: 0 3px 18px rgba(var(--v-shadow-key-umbra-color), 0.07);
+}
+
+.v-dialog .v-card-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+}
+
+.v-btn {
+  letter-spacing: 0.015em;
+}
+
+.v-field--variant-outlined {
+  border-radius: 7px;
+}
+
+.v-field--variant-outlined:not(.v-field--focused):not(.v-field--error) .v-field__outline {
+  color: rgb(var(--v-border-color));
+  --v-field-border-opacity: 0.45;
+}
+
+.v-table > .v-table__wrapper > table > thead > tr > th {
+  background: rgb(var(--v-table-header-color));
+  color: rgba(var(--v-theme-on-surface), 0.85);
+  font-weight: 600;
+}
+
+.v-table > .v-table__wrapper > table > tbody > tr:hover > td {
+  background: rgba(var(--v-theme-primary), 0.04);
+}
+
+.layout-nav-type-vertical .layout-vertical-nav {
+  // Give the forest navigation its own readable foreground in either theme.
+  --v-theme-on-surface: var(--v-theme-on-navigation);
+  --v-global-theme-primary: var(--v-theme-on-navigation);
+  background: rgb(var(--v-theme-navigation));
+  color: rgb(var(--v-theme-on-navigation));
+  border-inline-end: 1px solid rgba(var(--v-theme-on-navigation), 0.12);
+
+  .app-title,
+  .header-action,
+  .nav-link > a,
+  .nav-group > .nav-group-label {
+    color: rgb(var(--v-theme-on-navigation));
+  }
+
+  .nav-section-title {
+    color: rgba(var(--v-theme-on-navigation), 0.65);
+  }
+
+  .nav-link > .router-link-active {
+    background: rgba(var(--v-theme-on-navigation), 0.14) !important;
+    color: rgb(var(--v-theme-on-navigation)) !important;
+    box-shadow: none !important;
+  }
+
+  .nav-link > a:focus-visible,
+  .nav-group-label:focus-visible {
+    outline: 2px solid rgb(var(--v-theme-on-navigation));
+    outline-offset: -2px;
+  }
+
+  .vertical-nav-items-shadow {
+    background: linear-gradient(rgb(var(--v-theme-navigation)), transparent);
+  }
+}
+
+.layout-navbar .navbar-content-container {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 3px 16px rgba(var(--v-shadow-key-umbra-color), 0.05);
+}

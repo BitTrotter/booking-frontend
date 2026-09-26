@@ -3,6 +3,7 @@ import { useStorage } from '@vueuse/core'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useTheme } from 'vuetify'
 import {
+  themes,
   staticPrimaryColor,
   staticPrimaryDarkenColor,
 } from '@/plugins/vuetify/theme'
@@ -248,9 +249,9 @@ watch([
 const resetCustomizer = async () => {
   if (isCookieHasAnyValue.value) {
     vuetifyTheme.themes.value.light.colors.primary = staticPrimaryColor
-    vuetifyTheme.themes.value.dark.colors.primary = staticPrimaryColor
+    vuetifyTheme.themes.value.dark.colors.primary = themes.dark.colors.primary
     vuetifyTheme.themes.value.light.colors['primary-darken-1'] = staticPrimaryDarkenColor
-    vuetifyTheme.themes.value.dark.colors['primary-darken-1'] = staticPrimaryDarkenColor
+    vuetifyTheme.themes.value.dark.colors['primary-darken-1'] = themes.dark.colors['primary-darken-1']
     configStore.theme = themeConfig.app.theme
     configStore.skin = themeConfig.app.skin
     configStore.isVerticalNavSemiDark = themeConfig.verticalNav.isVerticalNavSemiDark

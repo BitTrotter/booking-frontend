@@ -222,10 +222,18 @@ input[altinputclass="inlinePicker"] {
   }
 
   .flatpickr-rContainer {
-    inline-size: 16.875rem;
+    // Flatpickr calculates the calendar width from the number of visible months.
+    // Let the weekday row span that full width instead of a single month.
+    inline-size: auto;
 
     .flatpickr-weekdays {
-      padding-inline: 0.5rem;
+      padding-inline: 0;
+    }
+
+    .flatpickr-weekdaycontainer {
+      box-sizing: border-box;
+      flex: 0 0 16.875rem;
+      padding-inline: 0.5625rem;
     }
 
     .flatpickr-days {
@@ -236,6 +244,7 @@ input[altinputclass="inlinePicker"] {
         justify-content: center !important;
         inline-size: 16.875rem !important;
         min-inline-size: 16.875rem !important;
+        max-inline-size: 16.875rem;
         padding-block: 0.75rem 0.5rem;
 
         .flatpickr-day {
