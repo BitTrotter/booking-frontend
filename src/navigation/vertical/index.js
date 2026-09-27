@@ -36,12 +36,12 @@ export default [
     icon: { icon: 'ri-calendar-line' },
     permission: 'list_reservation',
   },
-  {
-    title: 'Booking Widget',
-    to: { name: 'booking-widget' },
-    icon: { icon: 'ri-window-line' },
-    permission: 'list_reservation',
-  },
+  // {
+  //   title: 'Booking Widget',
+  //   to: { name: 'booking-widget' },
+  //   icon: { icon: 'ri-window-line' },
+  //   permission: 'list_reservation',
+  // },
   {
     title: 'Payments',
     to: { name: 'payments' },
