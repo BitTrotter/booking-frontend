@@ -1,4 +1,6 @@
 <script setup>
+import { validBookingDates } from '@/utils/bookingDates'
+import NightlyPrices from '@/components/booking/NightlyPrices.vue'
 import { $api } from '@/utils/api'
 import { computed, onMounted, ref, watch } from 'vue'
 
@@ -82,8 +84,8 @@ const hydrateForm = reservation => {
   }
 
   selectedCabinId.value = reservation.cabin_id || reservation.cabin?.id || null
-  startDate.value = reservation.start_date || reservation.start || null
-  endDate.value = reservation.end_date || reservation.end || null
+  startDate.value = String(reservation.start_date || reservation.start || '').slice(0, 10) || null
+  endDate.value = String(reservation.end_date || reservation.end || '').slice(0, 10) || null
   stayDateRange.value = [startDate.value, endDate.value].filter(Boolean).join(' to ')
   guestNumber.value = Number(reservation.guest_number) || 1
   fullName.value = reservation.full_name || ''
@@ -96,8 +98,8 @@ const checkAvailability = async () => {
   const requestId = ++availabilityRequestId
   availability.value = null
 
-  const hasDates = selectedCabinId.value && startDate.value && endDate.value
-  if (!hasDates || new Date(endDate.value) <= new Date(startDate.value)) {
+  const hasDates = selectedCabinId.value && validBookingDates(startDate.value, endDate.value)
+  if (!hasDates) {
     availabilityLoading.value = false
     return
   }
@@ -263,6 +265,7 @@ watch(stayDateRange, value => {
               prepend-inner-icon="ri-group-line" />
           </VCol>
           <VCol v-if="availabilityLabel" cols="12" class="pt-0">
+            <NightlyPrices :pricing="availability" />
             <VChip :color="availabilityColor" size="small" variant="tonal" :prepend-icon="availabilityLoading ? 'ri-loader-4-line' : undefined">
               {{ availabilityLabel }}
             </VChip>

@@ -1,4 +1,5 @@
 <script setup>
+import NightlyPrices from '@/components/booking/NightlyPrices.vue'
 import { computed } from 'vue'
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
@@ -134,6 +135,7 @@ const detailSections = computed(() => {
               </dl>
             </VCol>
           </VRow>
+          <NightlyPrices v-if="section.title === 'Stay details'" :pricing="{ ...reservation, nights: nightCount }" :currency="reservation.currency || 'MXN'" />
           <VCard v-if="section.title === 'Payment' && payment" variant="tonal" class="mt-2">
             <VCardText>
               <div class="d-flex flex-wrap align-center gap-3 mb-3">

@@ -1,4 +1,6 @@
 <script setup>
+import WeeklyPricesEditor from '@/components/cabins/WeeklyPricesEditor.vue'
+import { createWeeklyPrices } from '@/utils/weeklyPrices'
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
   cabin: { type: Object, default: null },
@@ -11,7 +13,7 @@ const close = () => emit('update:isDialogVisible', false)
 const imagesBaseUrl = import.meta.env.VITE_IMAGES_BASE_URL
 
 const formatCurrency = amount =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(amount || 0))
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(amount || 0))
 
 const statusColor = status => ({
   available: 'success',
@@ -74,6 +76,7 @@ const getImageUrl = image => {
       </div>
 
       <VCardText class="pt-4">
+        <WeeklyPricesEditor :model-value="createWeeklyPrices(cabin)" readonly class="mb-4" />
         <VRow>
           <!-- Left column -->
           <VCol cols="12" md="7">
@@ -94,7 +97,7 @@ const getImageUrl = image => {
                 <VCol cols="6">
                   <VCard variant="tonal" color="primary" class="text-center pa-3">
                     <VIcon icon="ri-money-dollar-circle-line" size="20" class="mb-1" />
-                    <div class="text-caption text-medium-emphasis">Price / Night</div>
+                    <div class="text-caption text-medium-emphasis">Desde / noche</div>
                     <div class="text-body-1 font-weight-bold">{{ formatCurrency(cabin.price_per_night) }}</div>
                   </VCard>
                 </VCol>

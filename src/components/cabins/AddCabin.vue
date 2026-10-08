@@ -1,5 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
+import WeeklyPricesEditor from '@/components/cabins/WeeklyPricesEditor.vue'
+import { createWeeklyPrices, validWeeklyPrices, weeklyPricesPayload } from '@/utils/weeklyPrices'
 import { requiredValidator } from '@/@core/utils/validators'
 
 const props = defineProps({
@@ -13,7 +15,8 @@ const emit = defineEmits(['update:isDialogVisible', 'cabin-created'])
 
 const name = ref('')
 const description = ref('')
-const price_per_night = ref(null)
+const weeklyPrices = ref(createWeeklyPrices())
+const pricingError = ref('')
 const capacity = ref(null)
 const beds = ref(null)
 const bathrooms = ref(null)
@@ -74,12 +77,17 @@ const createFeature = async () => {
 }
 
 const submitCabin = async () => {
+  pricingError.value = ''
+  if (!validWeeklyPrices(weeklyPrices.value)) {
+    pricingError.value = 'Completa las siete tarifas con importes válidos (0 a 999999.99 y hasta dos decimales).'
+    return
+  }
   submitting.value = true
 
   const payload = {
     name: name.value,
     description: description.value,
-    price_per_night: price_per_night.value,
+    weekly_prices: weeklyPricesPayload(weeklyPrices.value),
     capacity: capacity.value,
     beds: beds.value,
     bathrooms: bathrooms.value,
@@ -111,6 +119,7 @@ const submitCabin = async () => {
     resetForm()
     dialogVisibleUpdate(false)
   } catch (error) {
+    pricingError.value = Object.values(error?.data?.errors || {}).flat().join(' ') || error?.data?.message || error?.message || 'No se pudo guardar la cabaña.'
     console.error('Error submitting cabin:', error)
   } finally {
     submitting.value = false
@@ -120,7 +129,8 @@ const submitCabin = async () => {
 const resetForm = () => {
   name.value = ''
   description.value = ''
-  price_per_night.value = null
+  weeklyPrices.value = createWeeklyPrices()
+  pricingError.value = ''
   capacity.value = null
   beds.value = null
   bathrooms.value = null
@@ -212,20 +222,9 @@ watch(() => props.isDialogVisible, val => {
     </div>
 
     <VRow>
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <VTextField
-          v-model="price_per_night"
-          type="number"
-          label="Price per Night"
-          placeholder="1500"
-          prefix="$"
-          min="0"
-          prepend-inner-icon="ri-money-dollar-circle-line"
-          :rules="[requiredValidator]"
-        />
+      <VCol cols="12">
+        <VAlert v-if="pricingError" type="error" variant="tonal" class="mb-3">{{ pricingError }}</VAlert>
+        <WeeklyPricesEditor v-model="weeklyPrices" />
       </VCol>
       <VCol
         cols="12"

@@ -1,4 +1,6 @@
 <script setup>
+import { validBookingDates } from '@/utils/bookingDates'
+import NightlyPrices from '@/components/booking/NightlyPrices.vue'
 import logoFinal from '@images/logos/logo-final.png'
 import { $api } from '@/utils/api'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -15,6 +17,8 @@ const route = useRoute()
 
 const cabin = ref(null)
 const reservation = ref(null)
+const quote = ref(null)
+let quoteRequestId = 0
 const guestEmail = ref('')
 const guestPhone = ref('')
 const guestRows = ref([])
@@ -64,7 +68,7 @@ const adults = computed(() => Math.max(1, queryNumber('adults') || 1))
 const children = computed(() => Math.max(0, queryNumber('children') || 0))
 const confirmationToken = computed(() => queryValue('confirmation_token') || queryValue('token') || queryValue('checkout_token') || activeConfirmationToken.value)
 const reservationIdQuery = computed(() => queryNumber('reservation_id', 'reservationId'))
-const hasBookingDraft = computed(() => Boolean(cabinId.value && startDate.value && endDate.value))
+const hasBookingDraft = computed(() => Boolean(cabinId.value && validBookingDates(startDate.value, endDate.value)))
 const hasExistingReservation = computed(() => Boolean(confirmationToken.value || reservationIdQuery.value))
 
 const totalNights = computed(() => {
@@ -81,7 +85,7 @@ const totalNights = computed(() => {
 const formatCurrency = (amount, currency = 'USD') => new Intl.NumberFormat('es-ES', {
   style: 'currency',
   currency,
-  maximumFractionDigits: 0,
+  minimumFractionDigits: 2, maximumFractionDigits: 2,
 }).format(Number(amount || 0))
 
 const unwrapResponse = response => response?.data ?? response ?? null
@@ -96,21 +100,27 @@ const displayCurrency = computed(() => {
   return 'USD'
 })
 
+const displayPricing = computed(() => reservation.value || quote.value)
 const displayTotal = computed(() => {
-  if (reservation.value?.total_price)
-    return Number(reservation.value.total_price)
-
-  if (paymentIntent.value?.amount)
-    return Number(paymentIntent.value.amount)
-
-  if (cabin.value?.total_price)
-    return Number(cabin.value.total_price)
-
-  if (cabin.value?.price_per_night && totalNights.value)
-    return Number(cabin.value.price_per_night) * totalNights.value
-
-  return 0
+  const amount = reservation.value?.total_price ?? paymentIntent.value?.amount ?? quote.value?.total_price
+  return amount == null ? null : Number(amount)
 })
+
+const loadQuote = async () => {
+  const requestId = ++quoteRequestId
+  quote.value = null
+  if (hasExistingReservation.value || !hasBookingDraft.value)
+    return
+  try {
+    const query = new URLSearchParams({ cabin_id: cabinId.value, start_date: startDate.value, end_date: endDate.value, adults: adults.value, children: children.value })
+    const response = await $api(`/public/reservations/availability?${query}`)
+    if (requestId === quoteRequestId)
+      quote.value = unwrapResponse(response)
+  } catch (error) {
+    if (requestId === quoteRequestId)
+      errorMessage.value = error?.data?.message || error?.message || 'Could not quote the stay.'
+  }
+}
 
 const loadStripeJs = () => new Promise((resolve, reject) => {
   if (window.Stripe) {
@@ -226,8 +236,9 @@ const createPaymentIntent = async (reservationId, token) => {
 
     paymentIntent.value = intent
     reservation.value = {
+      ...reservation.value,
       id: intent.reservation_id || reservationId,
-      total_price: intent.amount,
+      total_price: reservation.value?.total_price ?? intent.amount,
       currency: intent.currency,
     }
     await mountPaymentElement(intent.client_secret)
@@ -263,7 +274,7 @@ const submitReservation = async () => {
   reservationError.value = ''
   reservationSuccess.value = ''
 
-  if (!cabinId.value || !startDate.value || !endDate.value) {
+  if (!cabinId.value || !validBookingDates(startDate.value, endDate.value)) {
     reservationError.value = 'Missing booking dates or cabin.'
     return
   }
@@ -289,7 +300,8 @@ const submitReservation = async () => {
     })
 
     const created = unwrapResponse(createdResponse)
-    const createdReservationId = created?.id || created?.reservation_id
+    reservation.value = created?.reservation ?? created
+    const createdReservationId = reservation.value?.id || created?.reservation_id
 
     if (!createdReservationId)
       throw new Error('Reservation created but no ID was returned.')
@@ -363,12 +375,15 @@ const handlePay = async () => {
 
 onMounted(() => {
   loadCabinDetails()
+  loadQuote()
   initializeCheckout()
 })
 
 onBeforeUnmount(() => {
   destroyPaymentElement()
 })
+
+watch([cabinId, startDate, endDate, adults, children], loadQuote)
 
 watch([cabinId, adults, children], () => {
   if (hasExistingReservation.value)
@@ -435,10 +450,11 @@ watch([cabinId, adults, children], () => {
                     <strong>{{ children }}</strong>
                   </div>
                   <div class="summary-item">
-                    <span>Price / night</span>
+                    <span>Desde / noche</span>
                     <strong>{{ formatCurrency(cabin.price_per_night || 0) }}</strong>
                   </div>
                 </div>
+                <NightlyPrices :pricing="displayPricing" :currency="displayCurrency" />
               </VCardText>
             </VCard>
 
@@ -501,7 +517,7 @@ watch([cabinId, adults, children], () => {
               <div v-if="reservation || hasExistingReservation" class="payment-meta">
                 <div>
                   <span>Total</span>
-                  <strong>{{ formatCurrency(displayTotal, displayCurrency) }}</strong>
+                  <strong>{{ displayTotal === null ? 'Pendiente de cotización' : formatCurrency(displayTotal, displayCurrency) }}</strong>
                 </div>
                 <div>
                   <span>Status</span>

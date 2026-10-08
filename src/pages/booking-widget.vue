@@ -1,4 +1,6 @@
 <script setup>
+import { validBookingDates } from '@/utils/bookingDates'
+import NightlyPrices from '@/components/booking/NightlyPrices.vue'
 import { $api } from '@/utils/api'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -19,6 +21,7 @@ const cabinDetails = ref(null)
 const loading = ref(false)
 const cabinLoading = ref(false)
 const availability = ref(null)
+let availabilityRequestId = 0
 const errorMessage = ref('')
 
 const getCabinIdFromRoute = () => {
@@ -83,7 +86,7 @@ const totalNights = computed(() => {
   return diff > 0 ? diff : 0
 })
 
-const canCheck = computed(() => selectedCabinId.value && startDate.value && endDate.value && totalNights.value > 0)
+const canCheck = computed(() => selectedCabinId.value && validBookingDates(startDate.value, endDate.value))
 const reservationTotal = computed(() => Number(availability.value?.total_price || 0))
 
 const startPickerConfig = {
@@ -132,7 +135,7 @@ const formatCurrency = amount => {
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
     currency: 'USD',
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(value)
 }
 
@@ -140,6 +143,7 @@ const handleCheckAvailability = async () => {
   if (!canCheck.value)
     return
 
+  const requestId = ++availabilityRequestId
   loading.value = true
   availability.value = null
   errorMessage.value = ''
@@ -149,11 +153,14 @@ const handleCheckAvailability = async () => {
       `/public/reservations/availability?cabin_id=${selectedCabinId.value}&start_date=${startDate.value}&end_date=${endDate.value}&adults=${adults.value}&children=${children.value}`,
     )
 
-    availability.value = unwrapResponse(resp)
+    if (requestId === availabilityRequestId)
+      availability.value = unwrapResponse(resp)
   } catch (error) {
-    errorMessage.value = error?.message || 'Could not check availability.'
+    if (requestId === availabilityRequestId)
+      errorMessage.value = error?.message || 'Could not check availability.'
   } finally {
-    loading.value = false
+    if (requestId === availabilityRequestId)
+      loading.value = false
   }
 }
 
@@ -184,6 +191,12 @@ onMounted(() => {
   fetchCabinDetails()
   scheduleWidgetHeightSend()
 })
+
+watch([selectedCabinId, startDate, endDate, adults, children], () => {
+  availabilityRequestId++
+  availability.value = null
+  loading.value = false
+}, { flush: 'sync' })
 
 watch(selectedCabinId, () => {
   fetchCabinDetails()
@@ -246,7 +259,7 @@ watch(selectedCabinId, () => {
                 v-else-if="selectedCabin"
                 class="price-pill"
               >
-                <span class="price-pill-label">Price / night</span>
+                <span class="price-pill-label">Desde / noche</span>
                 <span class="price-pill-value">{{ formatCurrency(selectedCabin.price_per_night) }}</span>
               </div>
             </div>
@@ -285,6 +298,7 @@ watch(selectedCabinId, () => {
             </div>
           </div>
 
+          <NightlyPrices :pricing="availability" />
           <div
             v-if="availability"
             class="result-bar"
@@ -293,7 +307,7 @@ watch(selectedCabinId, () => {
             <div class="result-price">
               <span class="result-price-label">Total price</span>
               <span class="result-price-value">
-                {{ availability?.total_price ? formatCurrency(availability.total_price) : '—' }}
+                {{ availability?.total_price != null ? formatCurrency(availability.total_price) : '—' }}
               </span>
             </div>
             <span

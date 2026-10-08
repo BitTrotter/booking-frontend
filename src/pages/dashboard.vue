@@ -483,7 +483,7 @@ onMounted(fetchAll)
                 {{ cabin.name }}
               </VListItemTitle>
               <VListItemSubtitle class="text-caption">
-                ${{ cabin.price_per_night }}/night · {{ cabin.capacity }} guests
+                Desde ${{ cabin.price_per_night }}/noche · {{ cabin.capacity }} guests
               </VListItemSubtitle>
 
               <template #append>

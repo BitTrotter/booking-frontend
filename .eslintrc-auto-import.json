@@ -362,6 +362,14 @@
     "ROUTE_PERMISSIONS": true,
     "getUserPermissions": true,
     "hasPermission": true,
-    "useWidgetHeightMessenger": true
+    "useWidgetHeightMessenger": true,
+    "createWeeklyPrices": true,
+    "isBookingDate": true,
+    "sameWeeklyPrices": true,
+    "validBookingDates": true,
+    "validWeeklyPrices": true,
+    "weekDays": true,
+    "weeklyPriceValidator": true,
+    "weeklyPricesPayload": true
   }
 }

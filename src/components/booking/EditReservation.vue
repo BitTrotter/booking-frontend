@@ -1,4 +1,5 @@
 <script setup>
+import { validBookingDates } from '@/utils/bookingDates'
 import { $api } from '@/utils/api'
 import { computed, onMounted, ref, watch } from 'vue'
 
@@ -107,13 +108,16 @@ const hydrateForm = reservation => {
 const isCancelled = computed(() => props.reservation?.status === 'cancelled')
 
 const canSubmit = computed(() => Boolean(
-  !isCancelled.value && props.reservation?.id && selectedCabinId.value && startDate.value && endDate.value
-  && new Date(endDate.value) > new Date(startDate.value) && status.value
+  !isCancelled.value && props.reservation?.id && selectedCabinId.value && validBookingDates(startDate.value, endDate.value) && status.value
   && fullName.value.trim() && phone.value.trim() && email.value.trim()
   && Number.isInteger(Number(guestNumber.value)) && Number(guestNumber.value) > 0
 ))
 
 const submitReservation = async () => {
+  if (!validBookingDates(startDate.value, endDate.value)) {
+    errorMessage.value = 'Selecciona fechas válidas; la salida debe ser posterior a la entrada.'
+    return
+  }
   errorMessage.value = ''
 
   if (isCancelled.value) {

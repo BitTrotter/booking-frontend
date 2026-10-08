@@ -124,7 +124,7 @@ import { computed, onMounted, ref } from 'vue'
 
 const headers = [
     { title: 'Cabin', key: 'name' },
-    { title: 'Price / Night', key: 'price_per_night' },
+    { title: 'Desde / noche', key: 'price_per_night' },
     { title: 'Capacity', key: 'capacity' },
     { title: 'Beds', key: 'beds' },
     { title: 'Bathrooms', key: 'bathrooms' },
@@ -188,7 +188,7 @@ const formatCurrency = amount => {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
-        maximumFractionDigits: 0,
+        minimumFractionDigits: 2, maximumFractionDigits: 2,
     }).format(value)
 }
 

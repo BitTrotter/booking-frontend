@@ -1,5 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import WeeklyPricesEditor from '@/components/cabins/WeeklyPricesEditor.vue'
+import { createWeeklyPrices, validWeeklyPrices, weeklyPricesPayload, sameWeeklyPrices } from '@/utils/weeklyPrices'
 import { requiredValidator } from '@/@core/utils/validators'
 
 const emit = defineEmits(['update:isDialogVisible', 'cabin-saved'])
@@ -18,13 +20,14 @@ const props = defineProps({
 const isEditMode = computed(() => !!props.cabin?.id)
 
 const refCabinForm = ref()
-const refPriceRuleForm = ref()
 const activeTab = ref(0)
 
 const name = ref('')
 const description_title = ref('')
 const description = ref('')
-const price_per_night = ref(null)
+const weeklyPrices = ref(createWeeklyPrices())
+const originalWeeklyPrices = ref(createWeeklyPrices())
+const pricingError = ref('')
 const capacity = ref(null)
 const beds = ref(null)
 const bathrooms = ref(null)
@@ -38,34 +41,6 @@ let mapMarker = null
 const selectedFeatures = ref([])
 const status = ref('available')
 
-const typeRule = ref(null)
-const typeRulePrice = ref(null)
-const starDate = ref(null)
-const endDate = ref(null)
-const minNights = ref(null)
-const ruleStatus = ref(true)
-const priceRules = ref([])
-const priceRuleError = ref('')
-const deletingPriceRuleId = ref(null)
-const ruleDateRange = computed({
-  get: () => [starDate.value, endDate.value].filter(Boolean).join(' to '),
-  set: value => {
-    const [start = '', end = ''] = String(value || '').split(' to ')
-    starDate.value = start || null
-    endDate.value = end || null
-  },
-})
-const ruleDateConfig = { mode: 'range', dateFormat: 'Y-m-d', showMonths: 2 }
-const validRuleDates = () => {
-  if (typeRule.value === 'weekend' && !starDate.value && !endDate.value)
-    return true
-
-  return Boolean(starDate.value && endDate.value && endDate.value >= starDate.value)
-    || 'Select a valid start and end date.'
-}
-const formatRuleDate = value => value ? new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString('en-US') : '—'
-const formatRulePrice = value => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))
-
 const images = ref([])
 const imagesBaseUrl = import.meta.env.VITE_IMAGES_BASE_URL
 const updatingMainImageId = ref(null)
@@ -77,7 +52,6 @@ const uploadingImages = ref(false)
 const featureList = ref([])
 const loadingFeatures = ref(false)
 const submitting = ref(false)
-const submittingRule = ref(false)
 
 const showNewFeatureForm = ref(false)
 const newFeatureName = ref('')
@@ -87,12 +61,6 @@ const statusItems = [
   { title: 'Available', value: 'available' },
   { title: 'Maintenance', value: 'maintenance' },
   { title: 'Unavailable', value: 'unavailable' },
-]
-
-const priceRuleTypes = [
-  { title: 'Weekend', value: 'weekend' },
-  { title: 'Date range', value: 'date_range' },
-  { title: 'Minimum nights', value: 'min_nights' },
 ]
 
 const dialogVisibleUpdate = val => {
@@ -108,7 +76,9 @@ const resetForm = () => {
   name.value = ''
   description_title.value = ''
   description.value = ''
-  price_per_night.value = null
+  weeklyPrices.value = createWeeklyPrices()
+  originalWeeklyPrices.value = createWeeklyPrices()
+  pricingError.value = ''
   capacity.value = null
   beds.value = null
   bathrooms.value = null
@@ -119,13 +89,6 @@ const resetForm = () => {
   selectedFeatures.value = []
   status.value = 'available'
   images.value = []
-  priceRules.value = []
-  priceRuleError.value = ''
-  typeRule.value = null
-  typeRulePrice.value = null
-  ruleDateRange.value = ''
-  minNights.value = null
-  ruleStatus.value = true
   showNewFeatureForm.value = false
   newFeatureName.value = ''
   activeTab.value = 0
@@ -224,64 +187,6 @@ const uploadImages = async () => {
   }
 }
 
-// ─── Price Rules ──────────────────────────────────────────────────────────────
-
-const deletePriceRule = async rule => {
-  if (!rule?.id || deletingPriceRuleId.value !== null || submittingRule.value) return
-  if (!confirm('Are you sure you want to delete this price rule?')) return
-
-  const cabinId = props.cabin?.id
-  deletingPriceRuleId.value = rule.id
-  priceRuleError.value = ''
-  try {
-    await $api(`/price-rules/${rule.id}`, { method: 'DELETE' })
-    if (props.cabin?.id === cabinId)
-      priceRules.value = priceRules.value.filter(item => item.id !== rule.id)
-  } catch (error) {
-    if (props.cabin?.id === cabinId)
-      priceRuleError.value = error?.data?.message || error?.message || 'Could not delete the price rule.'
-  } finally {
-    deletingPriceRuleId.value = null
-  }
-}
-
-const submitRulePrice = async () => {
-  if (deletingPriceRuleId.value !== null || submittingRule.value) return
-  priceRuleError.value = ''
-  const validation = await refPriceRuleForm.value?.validate()
-  if (!validation?.valid) return
-
-  submittingRule.value = true
-
-  const priceRulesPayload = {
-    type: typeRule.value,
-    price_per_night: typeRulePrice.value,
-    start_date: starDate.value || null,
-    end_date: endDate.value || null,
-    min_nights: minNights.value,
-    status: ruleStatus.value,
-  }
-
-  try {
-    await $api(`/cabins/${props.cabin.id}/price-rules`, {
-      method: 'POST',
-      body: priceRulesPayload,
-      onResponseError: ({ response }) => {
-        throw new Error(response.statusText || 'Error saving price rule')
-      },
-    })
-    refPriceRuleForm.value?.reset()
-    ruleStatus.value = true
-    const response = await $api(`/cabins/${props.cabin.id}`)
-    priceRules.value = (response?.data ?? response)?.price_rules || []
-  } catch (error) {
-    priceRuleError.value = error?.message || 'Could not save or refresh price rules.'
-    console.error('Error submitting price rule:', error)
-  } finally {
-    submittingRule.value = false
-  }
-}
-
 // ─── Features ────────────────────────────────────────────────────────────────
 
 const loadFeatures = async () => {
@@ -327,11 +232,11 @@ const loadCabinDetails = async () => {
   })
 
   const dataCabin = response?.data ?? response
-  priceRules.value = Array.isArray(dataCabin.price_rules) ? dataCabin.price_rules : []
   name.value = dataCabin.name
   description_title.value = dataCabin.description_title ?? ''
   description.value = dataCabin.description
-  price_per_night.value = dataCabin.price_per_night
+  weeklyPrices.value = createWeeklyPrices(dataCabin)
+  originalWeeklyPrices.value = { ...weeklyPrices.value }
   capacity.value = dataCabin.capacity
   beds.value = dataCabin.beds
   bathrooms.value = dataCabin.bathrooms
@@ -354,6 +259,12 @@ const loadCabinDetails = async () => {
 }
 
 const submitCabin = async () => {
+  pricingError.value = ''
+  if (!validWeeklyPrices(weeklyPrices.value)) {
+    activeTab.value = 1
+    pricingError.value = 'Completa las siete tarifas con importes válidos (0 a 999999.99 y hasta dos decimales).'
+    return
+  }
   const validation = await refCabinForm.value?.validate()
   if (!validation?.valid) return
 
@@ -363,7 +274,7 @@ const submitCabin = async () => {
     name: name.value,
     description_title: description_title.value,
     description: description.value,
-    price_per_night: price_per_night.value,
+    ...(!sameWeeklyPrices(weeklyPrices.value, originalWeeklyPrices.value) ? { weekly_prices: weeklyPricesPayload(weeklyPrices.value) } : {}),
     capacity: capacity.value,
     beds: beds.value,
     bathrooms: bathrooms.value,
@@ -400,6 +311,7 @@ const submitCabin = async () => {
     emit('cabin-saved', cabin)
     dialogVisibleUpdate(false)
   } catch (error) {
+    pricingError.value = Object.values(error?.data?.errors || {}).flat().join(' ') || error?.data?.message || error?.message || 'No se pudo guardar la cabaña.'
     console.error('Error submitting cabin:', error)
   } finally {
     submitting.value = false
@@ -548,16 +460,13 @@ onUnmounted(() => destroyMap())
             {{ images.length }}
           </VChip>
         </VTab>
-        <VTab :disabled="!isEditMode">
-          <VIcon start icon="ri-price-tag-3-line" />
-          Price Rules
-        </VTab>
       </VTabs>
 
       <VDivider />
 
       <VCardText class="px-6 py-5" style="min-height: 440px;">
 
+        <VAlert v-if="pricingError" type="error" variant="tonal" class="mb-3">{{ pricingError }}</VAlert>
         <!-- Tabs 0-3 share one form so Save validates everything at once -->
         <VForm ref="refCabinForm">
           <VWindow v-model="activeTab">
@@ -598,9 +507,8 @@ onUnmounted(() => destroyMap())
               </div>
 
               <VRow>
-                <VCol cols="12" md="6">
-                  <VTextField v-model="price_per_night" type="number" label="Price per Night" placeholder="1500"
-                    prefix="$" min="0" prepend-inner-icon="ri-money-dollar-circle-line" :rules="[requiredValidator]" />
+                <VCol cols="12">
+                  <WeeklyPricesEditor v-model="weeklyPrices" />
                 </VCol>
                 <VCol cols="12" md="6">
                   <VTextField v-model="capacity" type="number" label="Guest Capacity" placeholder="4" min="1"
@@ -775,85 +683,6 @@ onUnmounted(() => destroyMap())
           <VAlert v-else type="info" variant="tonal" class="mb-4" text="This cabin has no images yet." />
         </div>
 
-        <!-- ── Tab 5: Price Rules ─────────────────────────────────────────── -->
-        <div v-show="activeTab === 5">
-          <div class="d-flex align-center gap-2 mb-4">
-            <span class="text-subtitle-1 font-weight-semibold">Price Rules</span>
-            <VChip size="small" color="primary" variant="tonal">{{ priceRules.length }}</VChip>
-          </div>
-          <VTable v-if="priceRules.length" class="text-no-wrap mb-6" density="comfortable">
-            <thead>
-              <tr>
-                <th>Type</th><th>Price / night</th><th>Start date</th><th>End date</th>
-                <th>Days</th><th>Minimum nights</th><th>Status</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="rule in priceRules" :key="rule.id">
-                <td>{{ priceRuleTypes.find(item => item.value === rule.type)?.title || rule.type }}</td>
-                <td>${{ formatRulePrice(rule.price_per_night) }}</td>
-                <td>{{ formatRuleDate(rule.start_date) }}</td>
-                <td>{{ formatRuleDate(rule.end_date) }}</td>
-                <td>{{ Array.isArray(rule.days) ? rule.days.join(', ') : rule.days ?? '—' }}</td>
-                <td>{{ rule.min_nights ?? '—' }}</td>
-                <td><VChip :color="rule.active ? 'success' : 'secondary'" size="small" variant="tonal">
-                  {{ rule.active ? 'Active' : 'Inactive' }}
-                </VChip></td>
-                <td>
-                  <VBtn color="error" variant="tonal" size="small" prepend-icon="ri-delete-bin-line"
-                    :loading="deletingPriceRuleId === rule.id"
-                    :disabled="submittingRule || (deletingPriceRuleId !== null && deletingPriceRuleId !== rule.id)"
-                    @click="deletePriceRule(rule)">
-                    Delete
-                  </VBtn>
-                </td>
-              </tr>
-            </tbody>
-          </VTable>
-          <VAlert v-else type="info" variant="tonal" class="mb-6">No price rules for this cabin yet.</VAlert>
-          <VDivider class="mb-6" />
-          <VAlert v-if="priceRuleError" type="error" variant="tonal" class="mb-4">{{ priceRuleError }}</VAlert>
-          <VForm ref="refPriceRuleForm">
-            <div class="d-flex align-center gap-2 mb-4">
-              <VIcon size="18" color="primary">ri-price-tag-3-line</VIcon>
-              <span class="text-subtitle-1 font-weight-semibold">Add Price Rule</span>
-            </div>
-
-            <VRow>
-              <VCol cols="12" md="6">
-                <VSelect v-model="typeRule" label="Rule type" :items="priceRuleTypes" :rules="[requiredValidator]" />
-              </VCol>
-              <VCol cols="12" md="6">
-                <VTextField v-model="typeRulePrice" label="Rule price per night" type="number" prefix="$" min="0"
-                  :rules="[requiredValidator]" />
-              </VCol>
-              <VCol cols="12">
-                <AppDateTimePicker v-if="activeTab === 5" v-model="ruleDateRange" :config="ruleDateConfig"
-                  :label="typeRule === 'weekend' ? 'Start date / end date (optional)' : 'Start date / end date'"
-                  placeholder="Select the rule dates" clearable
-                  prepend-inner-icon="ri-calendar-event-line" :rules="[validRuleDates]" />
-              </VCol>
-              <VCol cols="12" md="6">
-                <VTextField v-model="minNights" label="Minimum nights" type="number" min="1"
-                  :rules="typeRule === 'min_nights' ? [requiredValidator] : []" />
-              </VCol>
-              <VCol cols="12" md="6">
-                <VSelect v-model="ruleStatus" label="Rule status" :items="[
-                  { title: 'Active', value: true },
-                  { title: 'Inactive', value: false },
-                ]" :rules="[requiredValidator]" />
-              </VCol>
-            </VRow>
-
-            <div class="pt-2 pb-1">
-              <VBtn variant="tonal" color="primary" prepend-icon="ri-price-tag-3-line" :loading="submittingRule"
-                :disabled="deletingPriceRuleId !== null"
-                @click="submitRulePrice">
-                Save Price Rule
-              </VBtn>
-            </div>
-          </VForm>
-        </div>
 
       </VCardText>
 
