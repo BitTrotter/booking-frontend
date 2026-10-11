@@ -14,7 +14,7 @@
             <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddReservationDialogVisible = true">
               Create Reservation
             </VBtn>
-            <VBtn color="primary" prepend-icon="ri-refresh-line" @click="list">
+            <VBtn color="primary" prepend-icon="ri-refresh-line" :loading="loading" @click="list">
               refresh
             </VBtn>
           </div>
@@ -105,10 +105,10 @@
             </template>
 
             <template #item.payment_status="{ item }">
-              <VChip v-if="paymentsMap[item.id]" :color="getPaymentStatusColor(paymentsMap[item.id].status)"
+              <VChip v-if="item.payment" :color="getPaymentStatusColor(item.payment.status)"
                 size="small" label class="text-capitalize">
-                <VIcon :icon="getPaymentStatusIcon(paymentsMap[item.id].status)" size="14" class="me-1" />
-                {{ paymentsMap[item.id].status }}
+                <VIcon :icon="getPaymentStatusIcon(item.payment.status)" size="14" class="me-1" />
+                {{ item.payment.status }}
               </VChip>
               <span v-else class="text-caption text-medium-emphasis">—</span>
             </template>
@@ -129,11 +129,11 @@
         </VCard>
       </VCardText>
 
-      <AddReservation v-model:isDialogVisible="isAddReservationDialogVisible" />
+      <AddReservation v-model:isDialogVisible="isAddReservationDialogVisible" @reservation-created="list" />
       <EditReservation v-model:isDialogVisible="isEditReservationDialogVisible" :reservation="selectedReservation"
         @reservation-updated="list" />
       <ReservationDetail v-model:isDialogVisible="isDetailDialogVisible" :reservation="selectedReservation"
-        :payment="selectedReservation ? paymentsMap[selectedReservation.id] : null" />
+        :payment="selectedReservation?.payment || null" />
     </VCard>
   </div>
 </template>
@@ -142,7 +142,7 @@
 import AddReservation from '@/components/booking/AddReservation.vue'
 import EditReservation from '@/components/booking/EditReservation.vue'
 import ReservationDetail from '@/components/booking/ReservationDetail.vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const headers = [
   { title: 'Booking', key: 'public_code' },
@@ -168,7 +168,6 @@ const isAddReservationDialogVisible = ref(false)
 const isEditReservationDialogVisible = ref(false)
 const isDetailDialogVisible = ref(false)
 const data = ref([])
-const paymentsMap = ref({})
 const selectedReservation = ref(null)
 const loading = ref(false)
 const confirmedReservations = computed(() => data.value.filter(item => item.status === 'confirmed').length)
@@ -265,20 +264,18 @@ const getStatusColor = status => {
 const list = async () => {
   loading.value = true
 
-  const [resp, payments] = await Promise.all([
-    $api('/reservations', {
+  try {
+    const resp = await $api('/reservations', {
       method: 'GET',
       onResponseError: ({ response }) => { throw new Error(response.statusText || 'Failed to load reservations') },
-    }),
-    $api('/payments', { method: 'GET' }).catch(() => []),
-  ])
+    })
 
-  data.value = Array.isArray(resp) ? resp : resp?.reservations || []
-
-  const list = Array.isArray(payments) ? payments : payments?.data || []
-  paymentsMap.value = Object.fromEntries(list.map(p => [p.reservation_id, p]))
-
-  loading.value = false
+    data.value = Array.isArray(resp) ? resp : resp?.reservations || []
+  } catch (error) {
+    console.error('Failed to load reservations:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 const openEdit = item => {
@@ -297,17 +294,6 @@ const openDetail = item => {
 onMounted(() => {
   list()
 })
-
-watch(isAddReservationDialogVisible, visible => {
-  if (!visible)
-    list()
-})
-
-watch(isEditReservationDialogVisible, visible => {
-  if (!visible)
-    list()
-})
-
 
 </script>
 

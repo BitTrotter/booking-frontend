@@ -2,7 +2,7 @@
 import { validBookingDates } from '@/utils/bookingDates'
 import NightlyPrices from '@/components/booking/NightlyPrices.vue'
 import { $api } from '@/utils/api'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const emit = defineEmits(['update:isDialogVisible', 'reservation-created'])
 
@@ -203,10 +203,6 @@ const submitReservation = async () => {
   }
 }
 
-onMounted(async () => {
-  cabinItems.value = await getCabinsAsync()
-})
-
 watch(() => props.isDialogVisible, visible => {
   if (!visible) {
     resetForm()
@@ -221,7 +217,7 @@ watch(() => props.isDialogVisible, visible => {
       cabinItems.value = items
     })
   }
-})
+}, { immediate: true })
 
 watch(() => props.initialReservation, initialReservation => {
   if (props.isDialogVisible && initialReservation)

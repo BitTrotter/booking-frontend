@@ -1,7 +1,7 @@
 <script setup>
 import { validBookingDates } from '@/utils/bookingDates'
 import { $api } from '@/utils/api'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const emit = defineEmits(['update:isDialogVisible', 'reservation-updated'])
 
@@ -193,10 +193,6 @@ const cancelReservation = async () => {
   }
 }
 
-onMounted(async () => {
-  cabinItems.value = await getCabinsAsync()
-})
-
 watch(() => props.isDialogVisible, visible => {
   if (!visible) {
     resetForm()
@@ -210,7 +206,7 @@ watch(() => props.isDialogVisible, visible => {
       cabinItems.value = items
     })
   }
-})
+}, { immediate: true })
 
 watch(() => props.reservation, reservation => {
   if (props.isDialogVisible)
