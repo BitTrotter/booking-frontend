@@ -1,5 +1,6 @@
 <script setup>
 import { validBookingDates } from '@/utils/bookingDates'
+import { emailValidator } from '@/@core/utils/validators'
 import NightlyPrices from '@/components/booking/NightlyPrices.vue'
 import { $api } from '@/utils/api'
 import { computed, ref, watch } from 'vue'
@@ -15,6 +16,7 @@ const guestNumber = ref(1)
 const fullName = ref('')
 const phone = ref('')
 const email = ref('')
+const sendEmail = ref(false)
 const paymentMethod = ref('')
 const paymentMethodItems = [
   { title: 'Stripe', value: 'stripe' },
@@ -70,6 +72,7 @@ const resetForm = () => {
   fullName.value = ''
   phone.value = ''
   email.value = ''
+  sendEmail.value = false
   paymentMethod.value = ''
   paymentReference.value = ''
   notes.value = ''
@@ -156,15 +159,25 @@ const stayDatePickerConfig = {
   },
 }
 
+const validateEmail = value => {
+  const address = String(value || '').trim()
+  if (sendEmail.value && !address)
+    return 'Enter an email address to send the confirmation.'
+
+  return emailValidator(address)
+}
+
 const canSubmit = computed(() => {
-  return Boolean(selectedCabinId.value && startDate.value && endDate.value && fullName.value.trim() && phone.value.trim() && email.value.trim() && Number.isInteger(Number(guestNumber.value)) && Number(guestNumber.value) > 0)
+  return Boolean(selectedCabinId.value && startDate.value && endDate.value && fullName.value.trim() && phone.value.trim() && validateEmail(email.value) === true && Number.isInteger(Number(guestNumber.value)) && Number(guestNumber.value) > 0)
 })
 
 const submitReservation = async () => {
   errorMessage.value = ''
 
   if (!canSubmit.value) {
-    errorMessage.value = 'Please complete cabin, dates, guest name, contact details, and a valid guest number.'
+    errorMessage.value = validateEmail(email.value) !== true
+      ? validateEmail(email.value)
+      : 'Please complete cabin, dates, guest name, phone, and a valid guest number.'
     return
   }
 
@@ -177,7 +190,8 @@ const submitReservation = async () => {
     guest_number: Number(guestNumber.value),
     full_name: fullName.value.trim(),
     phone: phone.value.trim(),
-    email: email.value.trim(),
+    email: email.value.trim() || null,
+    send_email: sendEmail.value,
     payment_method: paymentMethod.value || null,
     payment_reference: paymentReference.value.trim() || null,
     notes: notes.value.trim() || null,
@@ -261,7 +275,7 @@ watch(stayDateRange, value => {
               prepend-inner-icon="ri-group-line" />
           </VCol>
           <VCol v-if="availabilityLabel" cols="12" class="pt-0">
-            <NightlyPrices :pricing="availability" />
+            <NightlyPrices :pricing="availability" compact />
             <VChip :color="availabilityColor" size="small" variant="tonal" :prepend-icon="availabilityLoading ? 'ri-loader-4-line' : undefined">
               {{ availabilityLabel }}
             </VChip>
@@ -289,8 +303,12 @@ watch(stayDateRange, value => {
               prepend-inner-icon="ri-phone-line" />
           </VCol>
           <VCol cols="12" md="6">
-            <VTextField v-model="email" label="Email" placeholder="Guest email address" type="email"
-              prepend-inner-icon="ri-mail-line" />
+            <VTextField v-model="email" :label="sendEmail ? 'Email' : 'Email (optional)'" placeholder="Guest email address" type="email"
+              :rules="[validateEmail]" prepend-inner-icon="ri-mail-line" />
+          </VCol>
+          <VCol cols="12" class="pt-0">
+            <VCheckbox v-model="sendEmail" label="Send confirmation email to the guest"
+              hint="An email address is required when this option is selected." persistent-hint />
           </VCol>
         </VRow>
       </section>
