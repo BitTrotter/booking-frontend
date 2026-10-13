@@ -1,9 +1,11 @@
 <script setup>
+/* eslint-disable camelcase -- API field names follow the existing backend contract. */
+import { reservationErrorMessage } from '@/utils/reservationGroups'
 import { validBookingDates } from '@/utils/bookingDates'
 import { $api } from '@/utils/api'
+import { hasPermission } from '@/utils/permissions'
 import { computed, ref, watch } from 'vue'
 
-const emit = defineEmits(['update:isDialogVisible', 'reservation-updated'])
 
 const props = defineProps({
   isDialogVisible: {
@@ -16,6 +18,8 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['update:isDialogVisible', 'reservationUpdated'])
+
 const cabinItems = ref([])
 const selectedCabinId = ref(null)
 const startDate = ref(null)
@@ -27,6 +31,7 @@ const status = ref('pending')
 const phone = ref('')
 const email = ref('')
 const paymentMethod = ref('')
+
 const paymentMethodItems = [
   { title: 'Stripe', value: 'stripe' },
   { title: 'Cash', value: 'cash' },
@@ -34,6 +39,7 @@ const paymentMethodItems = [
   { title: 'Terminal', value: 'terminal' },
   { title: 'Courtesy', value: 'courtesy' },
 ]
+
 const paymentReference = ref('')
 const notes = ref('')
 const amountPaid = ref(null)
@@ -49,11 +55,10 @@ const dialogVisibleUpdate = val => {
 
 const getCabinsAsync = async () => {
   try {
-    const cabins = await $api('cabins?search=')
-
-    return cabins
+    return await $api('cabins?search=')
   } catch (error) {
     console.error('There was a problem with the fetch operation:', error)
+
     return []
   }
 }
@@ -86,6 +91,7 @@ const resetForm = () => {
 const hydrateForm = reservation => {
   if (!reservation) {
     resetForm()
+
     return
   }
 
@@ -108,25 +114,29 @@ const hydrateForm = reservation => {
 const isCancelled = computed(() => props.reservation?.status === 'cancelled')
 
 const canSubmit = computed(() => Boolean(
-  !isCancelled.value && props.reservation?.id && selectedCabinId.value && validBookingDates(startDate.value, endDate.value) && status.value
-  && fullName.value.trim() && phone.value.trim() && email.value.trim()
-  && Number.isInteger(Number(guestNumber.value)) && Number(guestNumber.value) > 0
+  hasPermission('edit_reservation') && !isCancelled.value && props.reservation?.id && selectedCabinId.value && validBookingDates(startDate.value, endDate.value) && status.value
+  && fullName.value.trim() && phone.value.trim()
+  && Number.isInteger(Number(guestNumber.value)) && Number(guestNumber.value) > 0,
 ))
 
 const submitReservation = async () => {
+  if (isSubmitting.value || isCancelling.value || !hasPermission('edit_reservation')) return
   if (!validBookingDates(startDate.value, endDate.value)) {
     errorMessage.value = 'Selecciona fechas válidas; la salida debe ser posterior a la entrada.'
+
     return
   }
   errorMessage.value = ''
 
   if (isCancelled.value) {
     errorMessage.value = 'Cancelled reservations cannot be edited.'
+
     return
   }
 
   if (!canSubmit.value) {
     errorMessage.value = 'Please complete cabin, valid stay dates, status, guest name, contact details, and a valid guest number.'
+
     return
   }
 
@@ -140,7 +150,7 @@ const submitReservation = async () => {
     guest_number: Number(guestNumber.value),
     full_name: fullName.value.trim(),
     phone: phone.value.trim(),
-    email: email.value.trim(),
+    email: email.value.trim() || null,
     payment_method: paymentMethod.value || null,
     payment_reference: paymentReference.value.trim() || null,
     notes: notes.value.trim() || null,
@@ -151,25 +161,22 @@ const submitReservation = async () => {
     await $api(`reservations/${props.reservation.id}`, {
       method: 'PUT',
       body: payload,
-      onResponseError: ({ response }) => {
-        throw new Error(response.statusText || 'Failed to update reservation')
-      },
     })
 
-    emit('reservation-updated')
+    emit('reservationUpdated')
     dialogVisibleUpdate(false)
   } catch (error) {
-    errorMessage.value = error?.message || 'Failed to update reservation'
+    errorMessage.value = reservationErrorMessage(error, 'Failed to update reservation')
   } finally {
     isSubmitting.value = false
   }
 }
 
 const cancelReservation = async () => {
-  if (!props.reservation?.id || isCancelled.value || isSubmitting.value || isCancelling.value)
+  if (!hasPermission('edit_reservation') || !props.reservation?.id || isCancelled.value || isSubmitting.value || isCancelling.value)
     return
 
-  if (!confirm('Are you sure you want to cancel this reservation?'))
+  if (!confirm('Cancel this reservation? This only affects this reservation; linked reservations keep their status and payments.'))
     return
 
   isCancelling.value = true
@@ -184,7 +191,7 @@ const cancelReservation = async () => {
       },
     })
 
-    emit('reservation-updated')
+    emit('reservationUpdated')
     dialogVisibleUpdate(false)
   } catch (error) {
     errorMessage.value = error?.message || 'Failed to cancel reservation'
@@ -196,6 +203,7 @@ const cancelReservation = async () => {
 watch(() => props.isDialogVisible, visible => {
   if (!visible) {
     resetForm()
+
     return
   }
 
@@ -214,45 +222,112 @@ watch(() => props.reservation, reservation => {
 })
 watch(stayDateRange, value => {
   const [checkIn = '', checkOut = ''] = String(value || '').split(' to ')
+
   startDate.value = checkIn || null
   endDate.value = checkOut || null
 })
 </script>
 
 <template>
-  <AppFormDialog :model-value="props.isDialogVisible" title="Edit Reservation"
-    subtitle="Update the stay, contact, payment details, and reservation status." :max-width="900" submit-text="Save changes" delete-text="Cancel reservation" :show-delete="!isCancelled"
+  <AppFormDialog
+    :model-value="props.isDialogVisible"
+    title="Edit Reservation"
+    subtitle="Changes and cancellation affect only this reservation. Linked reservations keep their own payments and status."
+    :max-width="900"
+    submit-text="Save changes"
+    delete-text="Cancel reservation"
+    :show-delete="!isCancelled && hasPermission('edit_reservation')"
     :delete-loading="isCancelling"
-    :loading="isSubmitting" :can-submit="canSubmit && !isCancelling" @update:model-value="dialogVisibleUpdate"
-    @submit="submitReservation" @delete="cancelReservation">
-    <VAlert v-if="isCancelled" type="info" variant="tonal">
+    :loading="isSubmitting"
+    :can-submit="canSubmit && !isCancelling"
+    @update:model-value="dialogVisibleUpdate"
+    @submit="submitReservation"
+    @delete="cancelReservation"
+  >
+    <VAlert
+      v-if="isCancelled"
+      type="info"
+      variant="tonal"
+    >
       Cancelled reservations cannot be edited.
     </VAlert>
-    <div v-else class="reservation-form">
+    <div
+      v-else
+      class="reservation-form"
+    >
       <section class="reservation-section">
         <div class="section-heading">
-          <VAvatar color="primary" variant="tonal" size="34"><VIcon icon="ri-calendar-event-line" size="18" /></VAvatar>
+          <VAvatar
+            color="primary"
+            variant="tonal"
+            size="34"
+          >
+            <VIcon
+              icon="ri-calendar-event-line"
+              size="18"
+            />
+          </VAvatar>
           <div>
-            <div class="text-subtitle-1 font-weight-semibold">Stay details</div>
-            <div class="text-body-2 text-medium-emphasis">Choose a cabin, dates, and guest count.</div>
+            <div class="text-subtitle-1 font-weight-semibold">
+              Stay details
+            </div>
+            <div class="text-body-2 text-medium-emphasis">
+              Choose a cabin, dates, and guest count.
+            </div>
           </div>
         </div>
         <VRow>
-          <VCol cols="12" md="6">
-            <VSelect v-model="selectedCabinId" :items="cabinItems" item-title="name" item-value="id"
-              label="Cabin" placeholder="Select a cabin" prepend-inner-icon="ri-home-4-line" />
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VSelect
+              v-model="selectedCabinId"
+              :items="cabinItems"
+              item-title="name"
+              item-value="id"
+              label="Cabin"
+              placeholder="Select a cabin"
+              prepend-inner-icon="ri-home-4-line"
+            />
           </VCol>
-          <VCol cols="12" md="6">
-            <AppDateTimePicker v-model="stayDateRange" :config="stayDatePickerConfig" label="Check-in / check-out"
-              placeholder="Select your stay dates" prepend-inner-icon="ri-calendar-event-line" />
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <AppDateTimePicker
+              v-model="stayDateRange"
+              :config="stayDatePickerConfig"
+              label="Check-in / check-out"
+              placeholder="Select your stay dates"
+              prepend-inner-icon="ri-calendar-event-line"
+            />
           </VCol>
-          <VCol cols="12" sm="6" md="4">
-            <VTextField v-model="guestNumber" label="Number of guests" type="number" min="1" step="1"
-              prepend-inner-icon="ri-group-line" />
+          <VCol
+            cols="12"
+            sm="6"
+            md="4"
+          >
+            <VTextField
+              v-model="guestNumber"
+              label="Number of guests"
+              type="number"
+              min="1"
+              step="1"
+              prepend-inner-icon="ri-group-line"
+            />
           </VCol>
-          <VCol cols="12" sm="6" md="4">
-            <VSelect v-model="status" :items="statusItems" label="Status"
-              prepend-inner-icon="ri-bookmark-3-line" />
+          <VCol
+            cols="12"
+            sm="6"
+            md="4"
+          >
+            <VSelect
+              v-model="status"
+              :items="statusItems"
+              label="Status"
+              prepend-inner-icon="ri-bookmark-3-line"
+            />
           </VCol>
         </VRow>
       </section>
@@ -261,24 +336,56 @@ watch(stayDateRange, value => {
 
       <section class="reservation-section">
         <div class="section-heading">
-          <VAvatar color="info" variant="tonal" size="34"><VIcon icon="ri-user-line" size="18" /></VAvatar>
+          <VAvatar
+            color="info"
+            variant="tonal"
+            size="34"
+          >
+            <VIcon
+              icon="ri-user-line"
+              size="18"
+            />
+          </VAvatar>
           <div>
-            <div class="text-subtitle-1 font-weight-semibold">Contact information</div>
-            <div class="text-body-2 text-medium-emphasis">How can you reach the primary guest?</div>
+            <div class="text-subtitle-1 font-weight-semibold">
+              Contact information
+            </div>
+            <div class="text-body-2 text-medium-emphasis">
+              How can you reach the primary guest?
+            </div>
           </div>
         </div>
         <VRow>
           <VCol cols="12">
-            <VTextField v-model="fullName" label="Full name" placeholder="Primary guest full name"
-              prepend-inner-icon="ri-user-line" />
+            <VTextField
+              v-model="fullName"
+              label="Full name"
+              placeholder="Primary guest full name"
+              prepend-inner-icon="ri-user-line"
+            />
           </VCol>
-          <VCol cols="12" md="6">
-            <VTextField v-model="phone" label="Phone" placeholder="Guest phone number"
-              prepend-inner-icon="ri-phone-line" />
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="phone"
+              label="Phone"
+              placeholder="Guest phone number"
+              prepend-inner-icon="ri-phone-line"
+            />
           </VCol>
-          <VCol cols="12" md="6">
-            <VTextField v-model="email" label="Email" placeholder="Guest email address" type="email"
-              prepend-inner-icon="ri-mail-line" />
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <VTextField
+              v-model="email"
+              label="Email"
+              placeholder="Guest email address"
+              type="email"
+              prepend-inner-icon="ri-mail-line"
+            />
           </VCol>
         </VRow>
       </section>
@@ -287,28 +394,73 @@ watch(stayDateRange, value => {
 
       <section class="reservation-section">
         <div class="section-heading">
-          <VAvatar color="success" variant="tonal" size="34"><VIcon icon="ri-bank-card-line" size="18" /></VAvatar>
+          <VAvatar
+            color="success"
+            variant="tonal"
+            size="34"
+          >
+            <VIcon
+              icon="ri-bank-card-line"
+              size="18"
+            />
+          </VAvatar>
           <div>
-            <div class="text-subtitle-1 font-weight-semibold">Payment</div>
-            <div class="text-body-2 text-medium-emphasis">Record the payment method and amount received.</div>
+            <div class="text-subtitle-1 font-weight-semibold">
+              Payment
+            </div>
+            <div class="text-body-2 text-medium-emphasis">
+              Record the payment method and amount received.
+            </div>
           </div>
         </div>
         <VRow>
-          <VCol cols="12" sm="6" md="4">
-            <VSelect v-model="paymentMethod" :items="paymentMethodItems" label="Payment method"
-              placeholder="Select a method" prepend-inner-icon="ri-wallet-3-line" clearable />
+          <VCol
+            cols="12"
+            sm="6"
+            md="4"
+          >
+            <VSelect
+              v-model="paymentMethod"
+              :items="paymentMethodItems"
+              label="Payment method"
+              placeholder="Select a method"
+              prepend-inner-icon="ri-wallet-3-line"
+              clearable
+            />
           </VCol>
-          <VCol cols="12" sm="6" md="4">
-            <VTextField v-model="amountPaid" label="Amount paid" type="number" min="0" step="0.01"
-              prepend-inner-icon="ri-money-dollar-circle-line" />
+          <VCol
+            cols="12"
+            sm="6"
+            md="4"
+          >
+            <VTextField
+              v-model="amountPaid"
+              label="Amount paid"
+              type="number"
+              min="0"
+              step="0.01"
+              prepend-inner-icon="ri-money-dollar-circle-line"
+            />
           </VCol>
-          <VCol cols="12" md="4">
-            <VTextField v-model="paymentReference" label="Payment reference" placeholder="Optional reference"
-              prepend-inner-icon="ri-hashtag" />
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <VTextField
+              v-model="paymentReference"
+              label="Payment reference"
+              placeholder="Optional reference"
+              prepend-inner-icon="ri-hashtag"
+            />
           </VCol>
           <VCol cols="12">
-            <VTextarea v-model="notes" label="Notes" placeholder="Add any details that may help manage this reservation"
-              rows="2" auto-grow />
+            <VTextarea
+              v-model="notes"
+              label="Notes"
+              placeholder="Add any details that may help manage this reservation"
+              rows="2"
+              auto-grow
+            />
           </VCol>
         </VRow>
       </section>

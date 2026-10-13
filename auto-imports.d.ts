@@ -41,6 +41,7 @@ declare global {
   const createUnrefFn: typeof import('@vueuse/core')['createUnrefFn']
   const createUrl: typeof import('./src/@core/composable/createUrl.js')['createUrl']
   const createWeeklyPrices: typeof import('./src/utils/weeklyPrices.js')['createWeeklyPrices']
+  const createdReservations: typeof import('./src/utils/reservationGroups.js')['createdReservations']
   const customRef: typeof import('vue')['customRef']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
   const debouncedWatch: typeof import('@vueuse/core')['debouncedWatch']
@@ -50,6 +51,7 @@ declare global {
   const defineStore: typeof import('pinia')['defineStore']
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
+  const eligibleLinkReservation: typeof import('./src/utils/reservationGroups.js')['eligibleLinkReservation']
   const emailValidator: typeof import('./src/@core/utils/validators.js')['emailValidator']
   const extendRef: typeof import('@vueuse/core')['extendRef']
   const formatDate: typeof import('./src/@core/utils/formatters.js')['formatDate']
@@ -81,6 +83,7 @@ declare global {
   const isToday: typeof import('./src/@core/utils/helpers.js')['isToday']
   const kFormatter: typeof import('./src/@core/utils/formatters.js')['kFormatter']
   const lengthValidator: typeof import('./src/@core/utils/validators.js')['lengthValidator']
+  const linkReservationGroup: typeof import('./src/utils/reservationGroups.js')['linkReservationGroup']
   const logicAnd: typeof import('@vueuse/math')['logicAnd']
   const logicNot: typeof import('@vueuse/math')['logicNot']
   const logicOr: typeof import('@vueuse/math')['logicOr']
@@ -92,6 +95,7 @@ declare global {
   const mapWritableState: typeof import('pinia')['mapWritableState']
   const markRaw: typeof import('vue')['markRaw']
   const nextTick: typeof import('vue')['nextTick']
+  const normalizeReservationGroupId: typeof import('./src/utils/reservationGroups.js')['normalizeReservationGroupId']
   const onActivated: typeof import('vue')['onActivated']
   const onBeforeMount: typeof import('vue')['onBeforeMount']
   const onBeforeRouteLeave: typeof import('vue-router/auto')['onBeforeRouteLeave']
@@ -134,6 +138,10 @@ declare global {
   const regexValidator: typeof import('./src/@core/utils/validators.js')['regexValidator']
   const registerPlugins: typeof import('./src/@core/utils/plugins.js')['registerPlugins']
   const requiredValidator: typeof import('./src/@core/utils/validators.js')['requiredValidator']
+  const reservationCabinPayload: typeof import('./src/utils/reservationGroups.js')['reservationCabinPayload']
+  const reservationErrorMessage: typeof import('./src/utils/reservationGroups.js')['reservationErrorMessage']
+  const reservationFieldErrors: typeof import('./src/utils/reservationGroups.js')['reservationFieldErrors']
+  const reservationFromResponse: typeof import('./src/utils/reservationGroups.js')['reservationFromResponse']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
@@ -345,6 +353,7 @@ declare global {
   const useWindowScroll: typeof import('@vueuse/core')['useWindowScroll']
   const useWindowSize: typeof import('@vueuse/core')['useWindowSize']
   const validBookingDates: typeof import('./src/utils/bookingDates.js')['validBookingDates']
+  const validReservationGroupId: typeof import('./src/utils/reservationGroups.js')['validReservationGroupId']
   const validWeeklyPrices: typeof import('./src/utils/weeklyPrices.js')['validWeeklyPrices']
   const watch: typeof import('vue')['watch']
   const watchArray: typeof import('@vueuse/core')['watchArray']
@@ -413,6 +422,7 @@ declare module 'vue' {
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
     readonly createUrl: UnwrapRef<typeof import('./src/@core/composable/createUrl.js')['createUrl']>
     readonly createWeeklyPrices: UnwrapRef<typeof import('./src/utils/weeklyPrices.js')['createWeeklyPrices']>
+    readonly createdReservations: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['createdReservations']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
@@ -422,6 +432,7 @@ declare module 'vue' {
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
+    readonly eligibleLinkReservation: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['eligibleLinkReservation']>
     readonly emailValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['emailValidator']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly formatDate: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDate']>
@@ -453,6 +464,7 @@ declare module 'vue' {
     readonly isToday: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isToday']>
     readonly kFormatter: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['kFormatter']>
     readonly lengthValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['lengthValidator']>
+    readonly linkReservationGroup: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['linkReservationGroup']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
     readonly logicOr: UnwrapRef<typeof import('@vueuse/math')['logicOr']>
@@ -464,6 +476,7 @@ declare module 'vue' {
     readonly mapWritableState: UnwrapRef<typeof import('pinia')['mapWritableState']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
+    readonly normalizeReservationGroupId: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['normalizeReservationGroupId']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
     readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router/auto')['onBeforeRouteLeave']>
@@ -506,6 +519,10 @@ declare module 'vue' {
     readonly regexValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['regexValidator']>
     readonly registerPlugins: UnwrapRef<typeof import('./src/@core/utils/plugins.js')['registerPlugins']>
     readonly requiredValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['requiredValidator']>
+    readonly reservationCabinPayload: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationCabinPayload']>
+    readonly reservationErrorMessage: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationErrorMessage']>
+    readonly reservationFieldErrors: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationFieldErrors']>
+    readonly reservationFromResponse: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationFromResponse']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
@@ -717,6 +734,7 @@ declare module 'vue' {
     readonly useWindowScroll: UnwrapRef<typeof import('@vueuse/core')['useWindowScroll']>
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>
     readonly validBookingDates: UnwrapRef<typeof import('./src/utils/bookingDates.js')['validBookingDates']>
+    readonly validReservationGroupId: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['validReservationGroupId']>
     readonly validWeeklyPrices: UnwrapRef<typeof import('./src/utils/weeklyPrices.js')['validWeeklyPrices']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>
@@ -778,6 +796,7 @@ declare module '@vue/runtime-core' {
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
     readonly createUrl: UnwrapRef<typeof import('./src/@core/composable/createUrl.js')['createUrl']>
     readonly createWeeklyPrices: UnwrapRef<typeof import('./src/utils/weeklyPrices.js')['createWeeklyPrices']>
+    readonly createdReservations: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['createdReservations']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
@@ -787,6 +806,7 @@ declare module '@vue/runtime-core' {
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
+    readonly eligibleLinkReservation: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['eligibleLinkReservation']>
     readonly emailValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['emailValidator']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly formatDate: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDate']>
@@ -818,6 +838,7 @@ declare module '@vue/runtime-core' {
     readonly isToday: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isToday']>
     readonly kFormatter: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['kFormatter']>
     readonly lengthValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['lengthValidator']>
+    readonly linkReservationGroup: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['linkReservationGroup']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
     readonly logicOr: UnwrapRef<typeof import('@vueuse/math')['logicOr']>
@@ -829,6 +850,7 @@ declare module '@vue/runtime-core' {
     readonly mapWritableState: UnwrapRef<typeof import('pinia')['mapWritableState']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
+    readonly normalizeReservationGroupId: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['normalizeReservationGroupId']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
     readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router/auto')['onBeforeRouteLeave']>
@@ -871,6 +893,10 @@ declare module '@vue/runtime-core' {
     readonly regexValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['regexValidator']>
     readonly registerPlugins: UnwrapRef<typeof import('./src/@core/utils/plugins.js')['registerPlugins']>
     readonly requiredValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['requiredValidator']>
+    readonly reservationCabinPayload: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationCabinPayload']>
+    readonly reservationErrorMessage: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationErrorMessage']>
+    readonly reservationFieldErrors: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationFieldErrors']>
+    readonly reservationFromResponse: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['reservationFromResponse']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
@@ -1082,6 +1108,7 @@ declare module '@vue/runtime-core' {
     readonly useWindowScroll: UnwrapRef<typeof import('@vueuse/core')['useWindowScroll']>
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>
     readonly validBookingDates: UnwrapRef<typeof import('./src/utils/bookingDates.js')['validBookingDates']>
+    readonly validReservationGroupId: UnwrapRef<typeof import('./src/utils/reservationGroups.js')['validReservationGroupId']>
     readonly validWeeklyPrices: UnwrapRef<typeof import('./src/utils/weeklyPrices.js')['validWeeklyPrices']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>

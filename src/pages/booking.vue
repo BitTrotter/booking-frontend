@@ -4,17 +4,28 @@
       <VCardText class="pb-2">
         <div class="d-flex flex-wrap justify-space-between align-center gap-4">
           <div>
-            <div class="text-h4 font-weight-bold">Reservations</div>
+            <div class="text-h4 font-weight-bold">
+              Reservations
+            </div>
             <div class="text-body-2 text-medium-emphasis">
               Review upcoming stays, reservation status, and guest count in one place.
             </div>
           </div>
 
           <div class="d-flex gap-3 align-center flex-wrap">
-            <VBtn color="primary" prepend-icon="ri-add-line" @click="isAddReservationDialogVisible = true">
+            <VBtn
+              color="primary"
+              prepend-icon="ri-add-line"
+              @click="isAddReservationDialogVisible = true"
+            >
               Create Reservation
             </VBtn>
-            <VBtn color="primary" prepend-icon="ri-refresh-line" :loading="loading" @click="list">
+            <VBtn
+              color="primary"
+              prepend-icon="ri-refresh-line"
+              :loading="loading"
+              @click="list"
+            >
               refresh
             </VBtn>
           </div>
@@ -22,28 +33,68 @@
       </VCardText>
 
       <VCardText class="pt-0">
+        <VAlert
+          v-if="detailError"
+          type="error"
+          variant="tonal"
+          closable
+          class="mb-4"
+          @click:close="detailError = ''"
+        >
+          {{ detailError }}
+        </VAlert>
         <VRow class="mb-2">
-          <VCol cols="12" md="4">
-            <VCard variant="tonal" color="primary">
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <VCard
+              variant="tonal"
+              color="primary"
+            >
               <VCardText>
-                <div class="text-caption text-medium-emphasis">Total reservations</div>
-                <div class="text-h4 font-weight-bold mt-1">{{ data.length }}</div>
+                <div class="text-caption text-medium-emphasis">
+                  Total reservations
+                </div>
+                <div class="text-h4 font-weight-bold mt-1">
+                  {{ data.length }}
+                </div>
               </VCardText>
             </VCard>
           </VCol>
-          <VCol cols="12" md="4">
-            <VCard variant="tonal" color="success">
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <VCard
+              variant="tonal"
+              color="success"
+            >
               <VCardText>
-                <div class="text-caption text-medium-emphasis">Confirmed</div>
-                <div class="text-h4 font-weight-bold mt-1">{{ confirmedReservations }}</div>
+                <div class="text-caption text-medium-emphasis">
+                  Confirmed
+                </div>
+                <div class="text-h4 font-weight-bold mt-1">
+                  {{ confirmedReservations }}
+                </div>
               </VCardText>
             </VCard>
           </VCol>
-          <VCol cols="12" md="4">
-            <VCard variant="tonal" color="warning">
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <VCard
+              variant="tonal"
+              color="warning"
+            >
               <VCardText>
-                <div class="text-caption text-medium-emphasis">Pending</div>
-                <div class="text-h4 font-weight-bold mt-1">{{ pendingReservations }}</div>
+                <div class="text-caption text-medium-emphasis">
+                  Pending
+                </div>
+                <div class="text-h4 font-weight-bold mt-1">
+                  {{ pendingReservations }}
+                </div>
               </VCardText>
             </VCard>
           </VCol>
@@ -52,38 +103,105 @@
         <VCard variant="outlined">
           <VCardText class="d-flex flex-wrap align-center justify-space-between gap-3 pb-2">
             <div>
-              <div class="text-subtitle-1 font-weight-medium">Reservation list</div>
-              <div class="text-caption text-medium-emphasis">Filter by arrival date, status, or creation time.</div>
+              <div class="text-subtitle-1 font-weight-medium">
+                Reservation list
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                Filter by arrival date, status, or creation time.
+              </div>
             </div>
-            <VBtnToggle v-model="listView" class="reservation-filter-toggle d-none d-md-flex" color="primary"
-              density="comfortable" mandatory>
-              <VBtn value="all" prepend-icon="ri-list-check">All</VBtn>
-              <VBtn value="recent" prepend-icon="ri-time-line">Recently created</VBtn>
-              <VBtn value="upcoming" prepend-icon="ri-calendar-event-line">Upcoming</VBtn>
-              <VBtn value="active" prepend-icon="ri-checkbox-circle-line">Active</VBtn>
-              <VBtn value="cancelled" prepend-icon="ri-close-circle-line">Cancelled</VBtn>
+            <VBtnToggle
+              v-model="listView"
+              class="reservation-filter-toggle d-none d-md-flex"
+              color="primary"
+              density="comfortable"
+              mandatory
+            >
+              <VBtn
+                value="all"
+                prepend-icon="ri-list-check"
+              >
+                All
+              </VBtn>
+              <VBtn
+                value="recent"
+                prepend-icon="ri-time-line"
+              >
+                Recently created
+              </VBtn>
+              <VBtn
+                value="upcoming"
+                prepend-icon="ri-calendar-event-line"
+              >
+                Upcoming
+              </VBtn>
+              <VBtn
+                value="active"
+                prepend-icon="ri-checkbox-circle-line"
+              >
+                Active
+              </VBtn>
+              <VBtn
+                value="cancelled"
+                prepend-icon="ri-close-circle-line"
+              >
+                Cancelled
+              </VBtn>
             </VBtnToggle>
-            <VSelect v-model="listView" class="d-flex d-md-none reservation-filter-select" :items="listViewItems"
-              label="Show reservations" density="comfortable" hide-details />
+            <VSelect
+              v-model="listView"
+              class="d-flex d-md-none reservation-filter-select"
+              :items="listViewItems"
+              label="Show reservations"
+              density="comfortable"
+              hide-details
+            />
           </VCardText>
           <VCardText class="pt-2">
-            <VTextField v-model="searchQuery" label="Search reservations"
-              placeholder="Booking code, guest name, or cabin" prepend-inner-icon="ri-search-line"
-              density="comfortable" clearable hide-details />
+            <VTextField
+              v-model="searchQuery"
+              label="Search reservations"
+              placeholder="Booking code, guest name, or cabin"
+              prepend-inner-icon="ri-search-line"
+              density="comfortable"
+              clearable
+              hide-details
+            />
           </VCardText>
-          <VDataTable :headers="headers" :items="visibleReservations" :items-per-page="8" class="text-no-wrap" :loading="loading"
-            no-data-text="No reservations match the selected filters.">
+          <VDataTable
+            :headers="headers"
+            :items="visibleReservations"
+            :items-per-page="8"
+            class="text-no-wrap"
+            :loading="loading"
+            no-data-text="No reservations match the selected filters."
+          >
             <template #item.public_code="{ item }">
-              <div class="font-weight-bold text-primary">{{ item.public_code || '—' }}</div>
+              <div class="font-weight-bold text-primary">
+                {{ item.public_code || '—' }}
+              </div>
+              <VBtn
+                v-if="item.reservation_group_id"
+                variant="text"
+                size="small"
+                prepend-icon="ri-links-line"
+                @click="openDetail(item)"
+              >
+                {{ item.related_reservations?.length || 0 }} linked
+              </VBtn>
             </template>
 
             <template #item.cabin="{ item }">
-              <div class="font-weight-medium">{{ item.cabin?.name || 'No cabin assigned' }}</div>
+              <div class="font-weight-medium">
+                {{ item.cabin?.name || 'No cabin assigned' }}
+              </div>
             </template>
 
             <template #item.full_name="{ item }">
               <div>
-                <div class="font-weight-medium">{{ getGuestName(item) }}</div>
+                <div class="font-weight-medium">
+                  {{ getGuestName(item) }}
+                </div>
                 <div class="text-body-2 text-medium-emphasis">
                   {{ item.guest_number ?? item.guests?.length ?? 0 }} guest<span v-if="(item.guest_number ?? item.guests?.length ?? 0) !== 1">s</span>
                 </div>
@@ -99,29 +217,70 @@
             </template>
 
             <template #item.status="{ item }">
-              <VChip :color="getStatusColor(item.status)" size="small" label class="text-capitalize">
+              <VChip
+                :color="getStatusColor(item.status)"
+                size="small"
+                label
+                class="text-capitalize"
+              >
                 {{ item.status || 'unknown' }}
               </VChip>
             </template>
 
             <template #item.payment_status="{ item }">
-              <VChip v-if="item.payment" :color="getPaymentStatusColor(item.payment.status)"
-                size="small" label class="text-capitalize">
-                <VIcon :icon="getPaymentStatusIcon(item.payment.status)" size="14" class="me-1" />
+              <VChip
+                v-if="item.payment"
+                :color="getPaymentStatusColor(item.payment.status)"
+                size="small"
+                label
+                class="text-capitalize"
+              >
+                <VIcon
+                  :icon="getPaymentStatusIcon(item.payment.status)"
+                  size="14"
+                  class="me-1"
+                />
                 {{ item.payment.status }}
               </VChip>
-              <span v-else class="text-caption text-medium-emphasis">—</span>
+              <span
+                v-else
+                class="text-caption text-medium-emphasis"
+              >—</span>
             </template>
 
             <template #item.actions="{ item }">
               <div class="d-flex justify-end gap-1">
-                <VBtn icon variant="text" size="small" color="secondary" @click="openDetail(item)">
-                  <VIcon icon="ri-eye-line" size="18" />
-                  <VTooltip activator="parent">View details</VTooltip>
+                <VBtn
+                  icon
+                  variant="text"
+                  size="small"
+                  color="secondary"
+                  @click="openDetail(item)"
+                >
+                  <VIcon
+                    icon="ri-eye-line"
+                    size="18"
+                  />
+                  <VTooltip activator="parent">
+                    View details
+                  </VTooltip>
                 </VBtn>
-                <VBtn icon variant="text" size="small" color="primary" :disabled="item.status === 'cancelled'" @click="openEdit(item)">
-                  <VIcon icon="ri-pencil-line" size="18" />
-                  <VTooltip activator="parent">Edit</VTooltip>
+                <VBtn
+                  v-if="hasPermission('edit_reservation')"
+                  icon
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  :disabled="item.status === 'cancelled'"
+                  @click="openEdit(item)"
+                >
+                  <VIcon
+                    icon="ri-pencil-line"
+                    size="18"
+                  />
+                  <VTooltip activator="parent">
+                    Edit
+                  </VTooltip>
                 </VBtn>
               </div>
             </template>
@@ -129,11 +288,22 @@
         </VCard>
       </VCardText>
 
-      <AddReservation v-model:isDialogVisible="isAddReservationDialogVisible" @reservation-created="list" />
-      <EditReservation v-model:isDialogVisible="isEditReservationDialogVisible" :reservation="selectedReservation"
-        @reservation-updated="list" />
-      <ReservationDetail v-model:isDialogVisible="isDetailDialogVisible" :reservation="selectedReservation"
-        :payment="selectedReservation?.payment || null" />
+      <AddReservation
+        v-model:isDialogVisible="isAddReservationDialogVisible"
+        @reservation-created="list"
+      />
+      <EditReservation
+        v-model:isDialogVisible="isEditReservationDialogVisible"
+        :reservation="selectedReservation"
+        @reservation-updated="list"
+      />
+      <ReservationDetail
+        v-model:isDialogVisible="isDetailDialogVisible"
+        :reservation="selectedReservation"
+        :payment="selectedReservation?.payment || null"
+        @view-related="openDetail"
+        @reservation-updated="refreshReservation"
+      />
     </VCard>
   </div>
 </template>
@@ -142,6 +312,8 @@
 import AddReservation from '@/components/booking/AddReservation.vue'
 import EditReservation from '@/components/booking/EditReservation.vue'
 import ReservationDetail from '@/components/booking/ReservationDetail.vue'
+import { hasPermission } from '@/utils/permissions'
+import { reservationErrorMessage, reservationFromResponse } from '@/utils/reservationGroups'
 import { computed, onMounted, ref } from 'vue'
 
 const headers = [
@@ -157,6 +329,7 @@ const headers = [
 
 const searchQuery = ref('')
 const listView = ref('all')
+
 const listViewItems = [
   { title: 'All except cancelled', value: 'all' },
   { title: 'Recently created', value: 'recent' },
@@ -164,17 +337,20 @@ const listViewItems = [
   { title: 'Active reservations', value: 'active' },
   { title: 'Cancelled reservations', value: 'cancelled' },
 ]
+
 const isAddReservationDialogVisible = ref(false)
 const isEditReservationDialogVisible = ref(false)
 const isDetailDialogVisible = ref(false)
 const data = ref([])
 const selectedReservation = ref(null)
 const loading = ref(false)
+const detailError = ref('')
 const confirmedReservations = computed(() => data.value.filter(item => item.status === 'confirmed').length)
 const pendingReservations = computed(() => data.value.filter(item => item.status === 'pending').length)
 const activeStatuses = ['pending', 'confirmed']
 const reservationStart = item => new Date(item.start_date || item.start).getTime()
 const normalizeSearch = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
 const searchedReservations = computed(() => {
   const query = normalizeSearch(searchQuery.value)
   if (!query) return data.value
@@ -183,15 +359,19 @@ const searchedReservations = computed(() => {
     item.public_code,
     getGuestName(item),
     item.cabin?.name,
+    item.reservation_group_id,
   ].some(value => normalizeSearch(value).includes(query)))
 })
+
 const visibleReservations = computed(() => {
   if (listView.value === 'cancelled')
     return searchedReservations.value.filter(item => item.status === 'cancelled')
 
   const reservations = searchedReservations.value.filter(item => item.status !== 'cancelled')
   const today = new Date()
+
   today.setHours(0, 0, 0, 0)
+
   const todayTime = today.getTime()
   const active = reservations.filter(item => activeStatuses.includes(item.status))
 
@@ -231,6 +411,7 @@ const formatStayDates = item => {
   const end = parseDate(item.end_date || item.end)
   const validStart = start && !Number.isNaN(start.getTime())
   const validEnd = end && !Number.isNaN(end.getTime())
+
   const format = (date, includeYear = true) => date.toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', ...(includeYear ? { year: 'numeric' } : {}),
   })
@@ -240,6 +421,7 @@ const formatStayDates = item => {
 
   return `${format(start, start.getFullYear() !== end.getFullYear())} – ${format(end)}`
 }
+
 const formatCurrency = amount => {
   const parsedAmount = Number(amount || 0)
 
@@ -279,22 +461,39 @@ const list = async () => {
 }
 
 const openEdit = item => {
-  if (item.status === 'cancelled')
+  if (item.status === 'cancelled' || !hasPermission('edit_reservation'))
     return
 
   selectedReservation.value = item
   isEditReservationDialogVisible.value = true
 }
 
-const openDetail = item => {
-  selectedReservation.value = item
-  isDetailDialogVisible.value = true
+let detailRequestId = 0
+
+const openDetail = async item => {
+  const requestId = ++detailRequestId
+
+  detailError.value = ''
+  try {
+    const response = await $api(`reservations/${item.id}`)
+    if (requestId !== detailRequestId) return
+    selectedReservation.value = reservationFromResponse(response)
+    isDetailDialogVisible.value = true
+  } catch (error) {
+    if (requestId !== detailRequestId) return
+    detailError.value = reservationErrorMessage(error, 'No se pudo cargar el detalle de la reservación.')
+  }
+}
+
+const refreshReservation = async id => {
+  await list()
+  if (selectedReservation.value?.id === id)
+    await openDetail({ id })
 }
 
 onMounted(() => {
   list()
 })
-
 </script>
 
 <style scoped>
