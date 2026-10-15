@@ -22,14 +22,14 @@ const relatedReservations = computed(() => (props.reservation?.related_reservati
 
 const unlink = async () => {
   if (!canEditGroup.value || unlinking.value || !props.reservation?.reservation_group_id) return
-  if (!confirm('¿Desvincular únicamente esta reservación? Sus pagos y estado se conservan.')) return
+  if (!confirm('Unlink only this reservation? Its payments and status will be preserved.')) return
   unlinking.value = true
   groupError.value = ''
   try {
     await $api(`reservations/${props.reservation.id}`, { method: 'PATCH', body: { reservation_group_id: null } })
     emit('reservationUpdated', props.reservation.id)
   } catch (error) {
-    groupError.value = reservationErrorMessage(error, 'No se pudo desvincular la reservación.')
+    groupError.value = reservationErrorMessage(error, 'Unable to unlink the reservation.')
   } finally {
     unlinking.value = false
   }
@@ -45,7 +45,7 @@ const close = () => emit('update:isDialogVisible', false)
 const formatDate = date => {
   if (!date) return '—'
 
-  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date}T00:00:00` : date).toLocaleDateString('es-MX', {
+  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date}T00:00:00` : date).toLocaleDateString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric',
   })
 }
@@ -53,14 +53,14 @@ const formatDate = date => {
 const formatDateTime = date => {
   if (!date) return '—'
 
-  return new Date(date).toLocaleDateString('es-MX', {
+  return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
 }
 
 const formatCurrency = (amount, currency = 'MXN') =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: (currency || 'MXN').toUpperCase() }).format(Number(amount || 0))
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: (currency || 'MXN').toUpperCase() }).format(Number(amount || 0))
 
 const reservationStatusColor = status => ({
   confirmed: 'success',
@@ -279,7 +279,7 @@ const detailSections = computed(() => {
       <section class="reservation-section">
         <div class="d-flex flex-wrap align-center justify-space-between gap-3">
           <div class="text-subtitle-1 font-weight-semibold">
-            Reservaciones vinculadas
+            Linked reservations
           </div>
           <div
             v-if="canEditGroup"
@@ -292,7 +292,7 @@ const detailSections = computed(() => {
               prepend-icon="ri-links-line"
               @click="linkingVisible = true"
             >
-              Vincular reservaciones
+              Link reservations
             </VBtn>
             <VBtn
               v-if="reservation.reservation_group_id"
@@ -302,16 +302,16 @@ const detailSections = computed(() => {
               :loading="unlinking"
               @click="unlink"
             >
-              Desvincular esta reservación
+              Unlink this reservation
             </VBtn>
           </div>
         </div>
         <VTextField
           v-if="reservation.reservation_group_id"
           :model-value="reservation.reservation_group_id"
-          label="Grupo"
+          label="Group"
           readonly
-          hint="Cada reservación conserva su pago y estado. Editar o cancelar una afecta únicamente a esa reservación."
+          hint="Each reservation keeps its payment and status. Editing or cancelling one affects only that reservation."
           persistent-hint
         />
         <VAlert
@@ -325,7 +325,7 @@ const detailSections = computed(() => {
           v-if="!relatedReservations.length"
           class="text-body-2 text-medium-emphasis"
         >
-          No hay reservaciones vinculadas.
+          No linked reservations.
         </div>
         <VCard
           v-for="related in relatedReservations"

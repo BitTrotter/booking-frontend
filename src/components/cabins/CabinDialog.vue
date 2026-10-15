@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import WeeklyPricesEditor from '@/components/cabins/WeeklyPricesEditor.vue'
+import SpecialPricesEditor from '@/components/cabins/SpecialPricesEditor.vue'
 import { createWeeklyPrices, validWeeklyPrices, weeklyPricesPayload, sameWeeklyPrices } from '@/utils/weeklyPrices'
 import { requiredValidator } from '@/@core/utils/validators'
 
@@ -262,7 +263,7 @@ const submitCabin = async () => {
   pricingError.value = ''
   if (!validWeeklyPrices(weeklyPrices.value)) {
     activeTab.value = 1
-    pricingError.value = 'Completa las siete tarifas con importes válidos (0 a 999999.99 y hasta dos decimales).'
+    pricingError.value = 'Enter all seven rates with valid amounts (0 to 999999.99 and up to two decimal places).'
     return
   }
   const validation = await refCabinForm.value?.validate()
@@ -311,7 +312,7 @@ const submitCabin = async () => {
     emit('cabin-saved', cabin)
     dialogVisibleUpdate(false)
   } catch (error) {
-    pricingError.value = Object.values(error?.data?.errors || {}).flat().join(' ') || error?.data?.message || error?.message || 'No se pudo guardar la cabaña.'
+    pricingError.value = Object.values(error?.data?.errors || {}).flat().join(' ') || error?.data?.message || error?.message || 'Unable to save the cabin.'
     console.error('Error submitting cabin:', error)
   } finally {
     submitting.value = false
@@ -611,6 +612,8 @@ onUnmounted(() => destroyMap())
 
           </VWindow>
         </VForm>
+        <SpecialPricesEditor v-if="isEditMode && activeTab === 1" :cabin-id="props.cabin.id"
+          :active="props.isDialogVisible" class="mt-4" />
 
         <!-- ── Tab 4: Images ──────────────────────────────────────────────── -->
         <div v-show="activeTab === 4">

@@ -79,7 +79,7 @@ const createFeature = async () => {
 const submitCabin = async () => {
   pricingError.value = ''
   if (!validWeeklyPrices(weeklyPrices.value)) {
-    pricingError.value = 'Completa las siete tarifas con importes válidos (0 a 999999.99 y hasta dos decimales).'
+    pricingError.value = 'Enter all seven rates with valid amounts (0 to 999999.99 and up to two decimal places).'
     return
   }
   submitting.value = true
@@ -119,7 +119,7 @@ const submitCabin = async () => {
     resetForm()
     dialogVisibleUpdate(false)
   } catch (error) {
-    pricingError.value = Object.values(error?.data?.errors || {}).flat().join(' ') || error?.data?.message || error?.message || 'No se pudo guardar la cabaña.'
+    pricingError.value = Object.values(error?.data?.errors || {}).flat().join(' ') || error?.data?.message || error?.message || 'Unable to save the cabin.'
     console.error('Error submitting cabin:', error)
   } finally {
     submitting.value = false

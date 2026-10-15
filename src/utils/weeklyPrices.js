@@ -1,11 +1,11 @@
 export const weekDays = [
-  { key: 'monday', label: 'Lunes' },
-  { key: 'tuesday', label: 'Martes' },
-  { key: 'wednesday', label: 'Miércoles' },
-  { key: 'thursday', label: 'Jueves' },
-  { key: 'friday', label: 'Viernes' },
-  { key: 'saturday', label: 'Sábado' },
-  { key: 'sunday', label: 'Domingo' },
+  { key: 'monday', label: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday' },
+  { key: 'friday', label: 'Friday' },
+  { key: 'saturday', label: 'Saturday' },
+  { key: 'sunday', label: 'Sunday' },
 ]
 
 export const createWeeklyPrices = (cabin = {}) => Object.fromEntries(
@@ -14,10 +14,10 @@ export const createWeeklyPrices = (cabin = {}) => Object.fromEntries(
 
 export const weeklyPriceValidator = value => {
   if (value === null || value === undefined || String(value).trim() === '')
-    return 'Ingresa una tarifa; puede ser cero.'
+    return 'Enter a rate; zero is allowed.'
 
   if (!/^\d+(\.\d{1,2})?$/.test(String(value)) || Number(value) > 999999.99)
-    return 'Usa un importe entre 0 y 999999.99, con hasta dos decimales.'
+    return 'Enter an amount from 0 to 999999.99, with up to two decimal places.'
 
   return true
 }

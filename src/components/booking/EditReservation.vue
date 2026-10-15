@@ -122,7 +122,7 @@ const canSubmit = computed(() => Boolean(
 const submitReservation = async () => {
   if (isSubmitting.value || isCancelling.value || !hasPermission('edit_reservation')) return
   if (!validBookingDates(startDate.value, endDate.value)) {
-    errorMessage.value = 'Selecciona fechas válidas; la salida debe ser posterior a la entrada.'
+    errorMessage.value = 'Select valid dates; check-out must be after check-in.'
 
     return
   }

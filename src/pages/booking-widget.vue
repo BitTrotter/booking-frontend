@@ -132,7 +132,7 @@ const { scheduleWidgetHeightSend } = useWidgetHeightMessenger(widgetRoot)
 const formatCurrency = amount => {
   const value = Number(amount || 0)
   
-  return new Intl.NumberFormat('es-ES', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -259,7 +259,7 @@ watch(selectedCabinId, () => {
                 v-else-if="selectedCabin"
                 class="price-pill"
               >
-                <span class="price-pill-label">Desde / noche</span>
+                <span class="price-pill-label">From / night</span>
                 <span class="price-pill-value">{{ formatCurrency(selectedCabin.price_per_night) }}</span>
               </div>
             </div>

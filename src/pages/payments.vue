@@ -61,11 +61,11 @@ const filteredData = computed(() => {
 
 // ── Helpers ──
 const formatCurrency = (amount, currency = 'MXN') =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: currency.toUpperCase() }).format(Number(amount || 0))
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(Number(amount || 0))
 
 const formatDate = date => {
   if (!date) return '—'
-  return new Date(date).toLocaleDateString('es-MX', {
+  return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })

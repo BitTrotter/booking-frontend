@@ -124,7 +124,7 @@ import { computed, onMounted, ref } from 'vue'
 
 const headers = [
     { title: 'Cabin', key: 'name' },
-    { title: 'Desde / noche', key: 'price_per_night' },
+    { title: 'From / night', key: 'price_per_night' },
     { title: 'Capacity', key: 'capacity' },
     { title: 'Beds', key: 'beds' },
     { title: 'Bathrooms', key: 'bathrooms' },

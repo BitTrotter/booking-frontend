@@ -481,7 +481,7 @@ const openDetail = async item => {
     isDetailDialogVisible.value = true
   } catch (error) {
     if (requestId !== detailRequestId) return
-    detailError.value = reservationErrorMessage(error, 'No se pudo cargar el detalle de la reservación.')
+    detailError.value = reservationErrorMessage(error, 'Unable to load reservation details.')
   }
 }
 

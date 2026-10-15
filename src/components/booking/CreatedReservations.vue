@@ -26,7 +26,7 @@ const openDetail = async item => {
     detailVisible.value = true
   } catch (error) {
     if (currentRequest === requestId)
-      errorMessage.value = reservationErrorMessage(error, 'No se pudo cargar el detalle.')
+      errorMessage.value = reservationErrorMessage(error, 'Unable to load details.')
   }
 }
 
@@ -39,10 +39,10 @@ const refresh = () => {
 <template>
   <AppFormDialog
     :model-value="isDialogVisible"
-    title="Reservaciones creadas"
+    title="Reservations created"
     :max-width="750"
     no-internal-form
-    subtitle="Cada reservación conserva su pago y estado individual."
+    subtitle="Each reservation keeps its own payment and status."
     @update:model-value="emit('update:isDialogVisible', $event)"
   >
     <VAlert
@@ -50,7 +50,7 @@ const refresh = () => {
       variant="tonal"
       class="mb-4"
     >
-      Se guardaron {{ reservations.length }} reservaciones.
+      {{ reservations.length }} reservations saved.
     </VAlert>
     <VCard
       v-for="reservation in reservations"
@@ -61,7 +61,7 @@ const refresh = () => {
       <VCardText class="d-flex flex-wrap align-center justify-space-between gap-3">
         <div>
           <div class="font-weight-semibold">
-            {{ reservation.public_code || `#${reservation.id}` }} · {{ reservation.cabin?.name || `Cabaña #${reservation.cabin_id}` }}
+            {{ reservation.public_code || `#${reservation.id}` }} · {{ reservation.cabin?.name || `Cabin #${reservation.cabin_id}` }}
           </div>
           <div class="text-body-2">
             {{ reservation.full_name }} · {{ reservation.status }}
@@ -72,7 +72,7 @@ const refresh = () => {
           size="small"
           @click="openDetail(reservation)"
         >
-          Ver detalle
+          View details
         </VBtn>
       </VCardText>
     </VCard>
@@ -89,7 +89,7 @@ const refresh = () => {
         variant="tonal"
         @click="emit('update:isDialogVisible', false)"
       >
-        Cerrar
+        Close
       </VBtn>
     </template>
   </AppFormDialog>

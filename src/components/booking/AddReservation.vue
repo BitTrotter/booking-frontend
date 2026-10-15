@@ -430,18 +430,18 @@ watch(stayDateRange, value => {
           variant="tonal"
         >
           <div v-if="priceSummary">
-            Suma informativa de subtotales: <strong>{{ priceSummary }}</strong>.
+            Estimated sum of subtotals: <strong>{{ priceSummary }}</strong>.
           </div>
           <div v-else>
-            La suma estará disponible cuando se consulten los precios de todas las cabañas.
+            The total will be available once prices have been retrieved for all cabins.
           </div>
-          El abono de la creación múltiple se captura una sola vez para el grupo.
+          For multiple reservations, enter the deposit once for the entire group.
         </VAlert>
         <VTextField
           v-if="cabinRows.length > 1"
           v-model="groupAmountPaid"
           :error-messages="fieldErrors.group_amount_paid || []"
-          label="Abono del grupo"
+          label="Group deposit"
           type="number"
           min="0"
           step="0.01"

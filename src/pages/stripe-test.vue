@@ -46,17 +46,17 @@ function loadStripeJs() {
 // ---------- Step 1: Create Payment Intent ----------
 async function createPaymentIntent() {
   if (!stripePublicKey.value.startsWith('pk_')) {
-    addLog('Stripe Public Key inválida. Debe empezar con pk_test_ o pk_live_', 'error')
+    addLog('Invalid Stripe public key. It must start with pk_test_ or pk_live_', 'error')
     return
   }
   if (!reservationId.value) {
-    addLog('Ingresa un reservation_id', 'error')
+    addLog('Enter a reservation_id', 'error')
     return
   }
 
   try {
     isLoadingIntent.value = true
-    addLog(`Creando Payment Intent para reservation_id: ${reservationId.value}…`, 'info')
+    addLog(`Creating Payment Intent for reservation_id: ${reservationId.value}…`, 'info')
 
     const data = await $api('payments/intent', {
       method: 'POST',
@@ -64,11 +64,11 @@ async function createPaymentIntent() {
     })
 
     paymentIntent.value = data
-    addLog(`Payment Intent creado ✓  |  id: ${data.payment_intent_id}  |  monto: ${data.amount} ${data.currency.toUpperCase()}`, 'success')
+    addLog(`Payment Intent created ✓  |  id: ${data.payment_intent_id}  |  amount: ${data.amount} ${data.currency.toUpperCase()}`, 'success')
 
     await mountCardElement()
   } catch (err) {
-    addLog(`Error al crear Payment Intent: ${err.message ?? err}`, 'error')
+    addLog(`Error creating Payment Intent: ${err.message ?? err}`, 'error')
   } finally {
     isLoadingIntent.value = false
   }
@@ -78,7 +78,7 @@ async function createPaymentIntent() {
 async function mountCardElement() {
   try {
     isLoadingStripe.value = true
-    addLog('Cargando Stripe.js…', 'info')
+    addLog('Loading Stripe.js…', 'info')
 
     await loadStripeJs()
     stripe = window.Stripe(stripePublicKey.value)
@@ -101,10 +101,10 @@ async function mountCardElement() {
       cardElement.mount('#card-element')
       cardElementMounted.value = true
       isStripeReady.value = true
-      addLog('Stripe Elements montado ✓ — ingresa los datos de la tarjeta', 'success')
+      addLog('Stripe Elements mounted ✓ — enter the card details', 'success')
     }
   } catch (err) {
-    addLog(`Error montando Stripe: ${err.message ?? err}`, 'error')
+    addLog(`Error mounting Stripe: ${err.message ?? err}`, 'error')
   } finally {
     isLoadingStripe.value = false
   }
@@ -116,7 +116,7 @@ async function pay() {
 
   try {
     isPayLoading.value = true
-    addLog('Confirmando pago con Stripe…', 'info')
+    addLog('Confirming payment with Stripe…', 'info')
 
     const { paymentIntent: pi, error } = await stripe.confirmCardPayment(
       paymentIntent.value.client_secret,
@@ -124,16 +124,16 @@ async function pay() {
     )
 
     if (error) {
-      addLog(`Error de pago: ${error.message}`, 'error')
+      addLog(`Payment error: ${error.message}`, 'error')
     } else if (pi.status === 'succeeded') {
-      addLog(`Pago exitoso ✓  |  status: ${pi.status}  |  id: ${pi.id}`, 'success')
+      addLog(`Payment successful ✓  |  status: ${pi.status}  |  id: ${pi.id}`, 'success')
     } else if (pi.status === 'requires_action') {
-      addLog(`Acción requerida (3D Secure)  |  status: ${pi.status}`, 'warning')
+      addLog(`Action required (3D Secure)  |  status: ${pi.status}`, 'warning')
     } else {
       addLog(`Status: ${pi.status}`, 'info')
     }
   } catch (err) {
-    addLog(`Error inesperado: ${err.message ?? err}`, 'error')
+    addLog(`Unexpected error: ${err.message ?? err}`, 'error')
   } finally {
     isPayLoading.value = false
   }
@@ -147,7 +147,7 @@ function reset() {
   if (cardElement) { cardElement.unmount(); cardElement = null }
   stripe = null
   logs.value = []
-  addLog('Reset completado — listo para una nueva prueba', 'info')
+  addLog('Reset complete — ready for a new test', 'info')
 }
 function fillKey() {
   stripePublicKey.value = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
@@ -167,7 +167,7 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
         <div>
           <div class="text-h4 font-weight-bold">Stripe Payment Test</div>
           <div class="text-body-2 text-medium-emphasis">
-            Prueba el flujo completo de pagos: Payment Intent → Card Element → Confirm
+            Test the complete payment flow: Payment Intent → Card Element → Confirm
           </div>
         </div>
         <VBtn variant="tonal" color="secondary" prepend-icon="ri-refresh-line" @click="reset">
@@ -191,7 +191,7 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
             <div>
 
               <VCardTitle>Stripe Public Key</VCardTitle>
-              <VCardSubtitle>Ingresa tu clave pk_test_… para no hardcodearla</VCardSubtitle>
+              <VCardSubtitle>Enter your pk_test_… key instead of hardcoding it</VCardSubtitle>
             </div>
             <VBtn color="primary" @click="fillKey()">fill key</VBtn>
           </div>
@@ -211,20 +211,20 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
               <span class="text-body-1 font-weight-bold">1</span>
             </VAvatar>
           </template>
-          <VCardTitle>Crear Payment Intent</VCardTitle>
+          <VCardTitle>Create Payment Intent</VCardTitle>
           <VCardSubtitle>POST /api/payments/intent</VCardSubtitle>
         </VCardItem>
         <VCardText>
           <VRow align="center">
             <VCol cols="12" sm="8">
-              <VTextField v-model="reservationId" label="reservation_id" placeholder="ej. 12" type="number"
+              <VTextField v-model="reservationId" label="reservation_id" placeholder="e.g. 12" type="number"
                 prepend-inner-icon="ri-calendar-check-line" hide-details density="comfortable"
                 :disabled="!!paymentIntent" />
             </VCol>
             <VCol cols="12" sm="4">
               <VBtn block color="info" :loading="isLoadingIntent" :disabled="!!paymentIntent"
                 @click="createPaymentIntent">
-                Crear Intent
+                Create Intent
               </VBtn>
             </VCol>
           </VRow>
@@ -232,8 +232,8 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
           <VAlert v-if="paymentIntent" class="mt-4" type="success" variant="tonal" density="compact">
             <div class="text-caption">
               <strong>ID:</strong> {{ paymentIntent.payment_intent_id }}<br>
-              <strong>Monto:</strong> {{ paymentIntent.amount }} {{ paymentIntent.currency.toUpperCase() }}<br>
-              <strong>Reservación:</strong> {{ paymentIntent.reservation_id }}
+              <strong>Amount:</strong> {{ paymentIntent.amount }} {{ paymentIntent.currency.toUpperCase() }}<br>
+              <strong>Reservation:</strong> {{ paymentIntent.reservation_id }}
             </div>
           </VAlert>
         </VCardText>
@@ -247,7 +247,7 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
               <span class="text-body-1 font-weight-bold">2</span>
             </VAvatar>
           </template>
-          <VCardTitle>Datos de Tarjeta</VCardTitle>
+          <VCardTitle>Card details</VCardTitle>
           <VCardSubtitle>Stripe Card Element</VCardSubtitle>
 
           <VBtn variant="plain" @click="copyTestCard()" class="ms-auto">
@@ -256,7 +256,7 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
         </VCardItem>
         <VCardText>
           <div v-if="!paymentIntent" class="text-medium-emphasis text-body-2">
-            Completa el paso 1 primero.
+            Complete step 1 first.
           </div>
 
           <div v-else>
@@ -280,13 +280,13 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
               <span class="text-body-1 font-weight-bold">3</span>
             </VAvatar>
           </template>
-          <VCardTitle>Confirmar Pago</VCardTitle>
+          <VCardTitle>Confirm payment</VCardTitle>
           <VCardSubtitle>stripe.confirmCardPayment(clientSecret, { card })</VCardSubtitle>
         </VCardItem>
         <VCardText>
           <VBtn block color="success" size="large" prepend-icon="ri-secure-payment-line" :loading="isPayLoading"
             :disabled="!isStripeReady" @click="pay">
-            Pagar
+            Pay
           </VBtn>
         </VCardText>
       </VCard>
@@ -301,12 +301,12 @@ const logColor = { success: 'success', error: 'error', warning: 'warning', info:
               <VIcon icon="ri-terminal-box-line" />
             </VAvatar>
           </template>
-          <VCardTitle>Panel de Estado</VCardTitle>
-          <VCardSubtitle>Logs en tiempo real</VCardSubtitle>
+          <VCardTitle>Status panel</VCardTitle>
+          <VCardSubtitle>Real-time logs</VCardSubtitle>
         </VCardItem>
         <VCardText class="pa-2" style="max-block-size: 520px; overflow-y: auto;">
           <div v-if="logs.length === 0" class="text-medium-emphasis text-body-2 pa-3">
-            Los eventos aparecerán aquí…
+            Events will appear here…
           </div>
           <VList density="compact">
             <VListItem v-for="(log, i) in logs" :key="i" class="rounded mb-1 log-item" :class="`log-${log.type}`">

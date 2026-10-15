@@ -21,7 +21,7 @@ const savedIds = ref([])
 const failures = ref([])
 const attempted = ref(false)
 const editable = computed(() => hasPermission('edit_reservation') && props.reservation?.status !== 'cancelled')
-const labelFor = item => `${item.public_code || `#${item.id}`} · ${item.cabin?.name || `Cabaña #${item.cabin_id}`} · ${item.full_name || ''}`
+const labelFor = item => `${item.public_code || `#${item.id}`} · ${item.cabin?.name || `Cabin #${item.cabin_id}`} · ${item.full_name || ''}`
 const nameFor = id => labels.value[id] || (id === props.reservation.id ? props.reservation.public_code : null) || `#${id}`
 
 const load = async () => {
@@ -35,7 +35,7 @@ const load = async () => {
     items.value = reservations.filter(item => eligibleLinkReservation(item, props.reservation.id))
       .map(item => ({ ...item, title: labelFor(item) }))
   } catch (error) {
-    errorMessage.value = reservationErrorMessage(error, 'No se pudieron consultar las reservaciones.')
+    errorMessage.value = reservationErrorMessage(error, 'Unable to load reservations.')
   } finally {
     loading.value = false
   }
@@ -59,7 +59,7 @@ const save = async () => {
     emit('reservationUpdated', props.reservation.id)
     await load()
   } catch (error) {
-    errorMessage.value = reservationErrorMessage(error, 'No se pudieron guardar los vínculos.')
+    errorMessage.value = reservationErrorMessage(error, 'Unable to save reservation links.')
   } finally {
     saving.value = false
   }
@@ -80,13 +80,13 @@ watch(() => props.isDialogVisible, visible => {
 <template>
   <AppFormDialog
     :model-value="isDialogVisible"
-    title="Vincular reservaciones"
+    title="Link reservations"
     :max-width="750"
-    subtitle="Cada reservación conserva su folio, precio, abono y estado."
-    :submit-text="attempted ? 'Reintentar pendientes' : 'Vincular seleccionadas'"
+    subtitle="Each reservation keeps its reference number, price, deposit, and status."
+    :submit-text="attempted ? 'Retry pending links' : 'Link selected reservations'"
     :loading="saving"
     :can-submit="editable && !loading && selectedIds.length > 0"
-    cancel-text="Cerrar"
+    cancel-text="Close"
     @update:model-value="value => { if (!saving) emit('update:isDialogVisible', value) }"
     @submit="save"
   >
@@ -95,8 +95,8 @@ watch(() => props.isDialogVisible, visible => {
       variant="tonal"
       class="mb-4"
     >
-      Sólo puedes seleccionar reservaciones sin grupo y no canceladas. Los vínculos se guardan de forma independiente.
-      Editar o cancelar una reservación afecta únicamente a esa reservación.
+      You can only select reservations that are ungrouped and not cancelled. Each link is saved independently.
+      Editing or cancelling a reservation affects only that reservation.
     </VAlert>
     <VAutocomplete
       v-model="selectedIds"
@@ -106,10 +106,10 @@ watch(() => props.isDialogVisible, visible => {
       multiple
       chips
       closable-chips
-      label="Reservaciones para vincular"
+      label="Reservations to link"
       :loading="loading"
       :disabled="saving || attempted || !editable"
-      no-data-text="No hay reservaciones disponibles para vincular."
+      no-data-text="No reservations available to link."
     />
     <VAlert
       v-if="savedIds.length"
@@ -117,7 +117,7 @@ watch(() => props.isDialogVisible, visible => {
       variant="tonal"
       class="mt-4"
     >
-      Vínculos guardados: {{ savedIds.map(nameFor).join(', ') }}.
+      Saved links: {{ savedIds.map(nameFor).join(', ') }}.
     </VAlert>
     <VAlert
       v-if="failures.length"
@@ -135,7 +135,7 @@ watch(() => props.isDialogVisible, visible => {
         v-if="selectedIds.length"
         class="mt-2"
       >
-        Pendientes: {{ selectedIds.map(nameFor).join(', ') }}. Puedes reintentarlos.
+        Pending: {{ selectedIds.map(nameFor).join(', ') }}. You can retry them.
       </div>
     </VAlert>
     <VAlert

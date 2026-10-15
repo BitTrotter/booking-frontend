@@ -14,11 +14,11 @@ const updatePrice = (key, value) => emit('update:modelValue', { ...props.modelVa
     <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-2">
       <div class="d-flex align-center gap-2">
         <VIcon color="primary" icon="ri-calendar-line" />
-        <span class="text-subtitle-1 font-weight-semibold">Tarifas semanales por noche</span>
+        <span class="text-subtitle-1 font-weight-semibold">Weekly nightly rates</span>
       </div>
-      <VChip v-if="minimum !== null" color="primary" variant="tonal" size="small">Desde {{ formatPrice(minimum) }}</VChip>
+      <VChip v-if="minimum !== null" color="primary" variant="tonal" size="small">From {{ formatPrice(minimum) }}</VChip>
     </div>
-    <p class="text-body-2 text-medium-emphasis mb-4">Se repiten cada semana. Se cobra cada noche desde la entrada; el día de salida no se cobra.</p>
+    <p class="text-body-2 text-medium-emphasis mb-4">These rates repeat each week. Every night from check-in is charged; the check-out day is not charged.</p>
     <VRow dense>
       <VCol v-for="day in weekDays" :key="day.key" cols="12" sm="6" md="4">
         <div v-if="readonly" class="d-flex justify-space-between gap-2 py-2">

@@ -1,5 +1,6 @@
 <script setup>
 import WeeklyPricesEditor from '@/components/cabins/WeeklyPricesEditor.vue'
+import SpecialPricesEditor from '@/components/cabins/SpecialPricesEditor.vue'
 import { createWeeklyPrices } from '@/utils/weeklyPrices'
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
@@ -77,6 +78,7 @@ const getImageUrl = image => {
 
       <VCardText class="pt-4">
         <WeeklyPricesEditor :model-value="createWeeklyPrices(cabin)" readonly class="mb-4" />
+        <SpecialPricesEditor :cabin-id="cabin.id" :active="props.isDialogVisible" readonly class="mb-4" />
         <VRow>
           <!-- Left column -->
           <VCol cols="12" md="7">
@@ -97,7 +99,7 @@ const getImageUrl = image => {
                 <VCol cols="6">
                   <VCard variant="tonal" color="primary" class="text-center pa-3">
                     <VIcon icon="ri-money-dollar-circle-line" size="20" class="mb-1" />
-                    <div class="text-caption text-medium-emphasis">Desde / noche</div>
+                    <div class="text-caption text-medium-emphasis">From / night</div>
                     <div class="text-body-1 font-weight-bold">{{ formatCurrency(cabin.price_per_night) }}</div>
                   </VCard>
                 </VCol>

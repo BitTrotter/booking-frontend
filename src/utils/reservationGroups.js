@@ -43,26 +43,26 @@ export const linkReservationGroup = async (api, currentId, targetIds, groupId) =
   const failed = []
   try {
     const current = reservationFromResponse(await api(`reservations/${currentId}`))
-    if (current.status === 'cancelled') throw new Error('No se puede editar una reservación cancelada.')
+    if (current.status === 'cancelled') throw new Error('A cancelled reservation cannot be edited.')
     if (current.reservation_group_id && normalizeReservationGroupId(current.reservation_group_id) !== groupId)
-      throw new Error('El grupo de la reservación cambió. Actualiza los datos antes de vincular.')
+      throw new Error('The reservation group has changed. Refresh the data before linking.')
     if (!current.reservation_group_id)
       await api(`reservations/${currentId}`, { method: 'PATCH', body: { reservation_group_id: groupId } })
     saved.push(currentId)
   } catch (error) {
-    return { saved, failed: [{ id: currentId, message: reservationErrorMessage(error, 'No se pudo guardar el grupo.') }], pending: targetIds }
+    return { saved, failed: [{ id: currentId, message: reservationErrorMessage(error, 'Unable to save the group.') }], pending: targetIds }
   }
   for (const id of [...new Set(targetIds)].filter(id => id !== currentId)) {
     try {
       const candidate = reservationFromResponse(await api(`reservations/${id}`))
-      if (candidate.status === 'cancelled') throw new Error('La reservación está cancelada.')
+      if (candidate.status === 'cancelled') throw new Error('The reservation is cancelled.')
       if (candidate.reservation_group_id && normalizeReservationGroupId(candidate.reservation_group_id) !== groupId)
-        throw new Error('La reservación ya pertenece a otro grupo.')
+        throw new Error('The reservation already belongs to another group.')
       if (!candidate.reservation_group_id)
         await api(`reservations/${id}`, { method: 'PATCH', body: { reservation_group_id: groupId } })
       saved.push(id)
     } catch (error) {
-      failed.push({ id, message: reservationErrorMessage(error, 'No se pudo vincular.') })
+      failed.push({ id, message: reservationErrorMessage(error, 'Unable to link the reservation.') })
     }
   }
 

@@ -82,7 +82,7 @@ const totalNights = computed(() => {
   return diff > 0 ? diff : 0
 })
 
-const formatCurrency = (amount, currency = 'USD') => new Intl.NumberFormat('es-ES', {
+const formatCurrency = (amount, currency = 'USD') => new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency,
   minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -450,7 +450,7 @@ watch([cabinId, adults, children], () => {
                     <strong>{{ children }}</strong>
                   </div>
                   <div class="summary-item">
-                    <span>Desde / noche</span>
+                    <span>From / night</span>
                     <strong>{{ formatCurrency(cabin.price_per_night || 0) }}</strong>
                   </div>
                 </div>
@@ -517,7 +517,7 @@ watch([cabinId, adults, children], () => {
               <div v-if="reservation || hasExistingReservation" class="payment-meta">
                 <div>
                   <span>Total</span>
-                  <strong>{{ displayTotal === null ? 'Pendiente de cotización' : formatCurrency(displayTotal, displayCurrency) }}</strong>
+                  <strong>{{ displayTotal === null ? 'Awaiting quote' : formatCurrency(displayTotal, displayCurrency) }}</strong>
                 </div>
                 <div>
                   <span>Status</span>
